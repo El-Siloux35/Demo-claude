@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regard</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --panel: rgba(0,0,0,0.035);
+    --panel-edge: rgba(0,0,0,0.12);
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --accent: #161616;
+    --accent-soft: #e4e4e4;
+    --up: #111111;
+    --down: #6e6e6e;
+    --ring: #161616;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --panel: rgba(255,255,255,0.055);
+      --panel-edge: rgba(255,255,255,0.12);
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --accent: #ececec;
+      --accent-soft: #2a2a2a;
+      --up: #f2f2f2;
+      --down: #9a9a9a;
+      --ring: #ececec;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a0a0a;
+    --panel: rgba(255,255,255,0.055);
+    --panel-edge: rgba(255,255,255,0.12);
+    --ink: #f2f2f2;
+    --ink-dim: #9a9a9a;
+    --accent: #ececec;
+    --accent-soft: #2a2a2a;
+    --up: #f2f2f2;
+    --down: #9a9a9a;
+    --ring: #ececec;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 190px;
+    min-height: 100vh;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid var(--panel-edge);
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--ground);
+  }
+  .home-link {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .side-nav a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+  .side-nav a:hover { color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--panel); font-weight: 600; }
+  .side-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px 14px;
+    border-left: 1px solid var(--panel-edge);
+    padding-left: 10px;
+  }
+  .side-sub a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 11px;
+    padding: 5px 6px;
+    border-radius: 5px;
+  }
+  .side-sub a:hover { color: var(--ink); }
+
+  main.content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background:
+      radial-gradient(120% 90% at 15% 0%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+      var(--ground);
+  }
+
+  header {
+    padding: 22px clamp(18px, 4vw, 40px) 6px;
+    max-width: 680px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-family: 'Calistoga', Georgia, serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: clamp(19px, 2.6vw, 25px);
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+
+  .intro {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 0 0 4px;
+    max-width: 62ch;
+  }
+  .privacy {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    border-left: 2px solid var(--accent);
+    padding-left: 8px;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    margin: 10px clamp(10px, 3vw, 30px) clamp(10px, 3vw, 30px);
+    border: 1px dashed var(--panel-edge);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
+    gap: 18px;
+    padding: 24px;
+    transition: opacity 0.9s ease, filter 0.9s ease, transform 0.9s ease;
+  }
+  .widgets.hidden {
+    opacity: 0.04;
+    filter: blur(2px);
+    transform: scale(0.97);
+  }
+
+  .widget {
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 14px;
+    padding: 16px 18px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .widget .label {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0 0 10px;
+  }
+  .widget .big {
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 28px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .widget .sub {
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    margin: 4px 0 0;
+  }
+  .ticker-row {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 13.5px;
+    padding: 5px 0;
+    border-top: 1px solid var(--panel-edge);
+  }
+  .ticker-row:first-of-type { border-top: none; }
+  .ticker-row .up { color: var(--up); font-weight: 600; }
+  .ticker-row .down { color: var(--down); }
+  .note {
+    font-size: 10px;
+    color: var(--ink-dim);
+    opacity: 0.75;
+    margin-top: 10px;
+  }
+
+  .status {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    background: color-mix(in srgb, var(--ground) 80%, transparent);
+    padding: 4px 9px;
+    border-radius: 4px;
+    z-index: 90;
+  }
+
+  .cam-preview {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    width: 176px;
+    height: 132px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--panel-edge);
+    z-index: 90;
+    background: #000;
+  }
+  .cam-preview video, .cam-preview canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    object-fit: cover;
+  }
+
+  .start-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    text-align: center;
+    padding: 20px;
+  }
+  .start-btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ground);
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 22px;
+    cursor: pointer;
+  }
+  .start-btn:disabled { opacity: 0.5; cursor: default; }
+  .start-note {
+    max-width: 44ch;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+
+
+  /* ---- Prompt recopiable : encart noir, indépendant du thème clair/sombre ---- */
+  .prompt-tab {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    background: #000000;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 7px 13px;
+    cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed;
+    bottom: 54px;
+    left: 14px;
+    z-index: 1200;
+    width: min(430px, calc(100vw - 34px));
+    max-height: min(62vh, 460px);
+    display: flex;
+    flex-direction: column;
+    background: #000000;
+    color: #f2f2f2;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a2a2a;
+    flex: 0 0 auto;
+  }
+  .prompt-panel-head h2 {
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    font-weight: 600;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    font-family: inherit;
+    font-size: 11px;
+    color: #f2f2f2;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre {
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: #f2f2f2;
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Calistoga&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-animations.html">Animations</a>
+    <div class="side-sub">
+      <a href="demo-animations.html#grille">Grille</a>
+      <a href="demo-animations.html#glisser">Glisser</a>
+      <a href="demo-animations.html#texte">Texte</a>
+    </div>
+  </nav>
+</aside>
+<script>
+  (function () {
+    var here = location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.side-nav > a').forEach(function (a) {
+      if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
+    });
+  })();
+</script>
+
+<main class="content">
+  <header>
+    <p class="eyebrow">Démo : interface attentive au regard</p>
+    <h1>De l'information seulement quand on la regarde.</h1>
+    <p class="intro">Regardez l'écran : les widgets (météo, bourse, horloge) apparaissent. Détournez le regard : ils s'effacent. La caméra détecte votre présence et votre attention, pas un point précis sur l'écran, juste "êtes-vous là, les yeux ouverts, tourné·e vers l'écran ?".</p>
+    <p class="privacy">🔒 Tout le calcul se fait dans votre navigateur. Aucune image n'est envoyée ni enregistrée nulle part.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="widgets hidden" id="widgets">
+      <div class="widget">
+        <p class="label">Horloge</p>
+        <p class="big" id="clock">--:--:--</p>
+        <p class="sub" id="dateLine">·</p>
+      </div>
+      <div class="widget">
+        <p class="label">Météo</p>
+        <p class="big">14° <span style="font-size:16px">☁️</span></p>
+        <p class="sub">Nuageux, vent faible</p>
+        <p class="note">donnée d'exemple</p>
+      </div>
+      <div class="widget">
+        <p class="label">Bourse</p>
+        <div class="ticker-row"><span>CAC 40</span><span class="up">▲ 0,82 %</span></div>
+        <div class="ticker-row"><span>NASDAQ</span><span class="down">▼ 0,34 %</span></div>
+        <div class="ticker-row"><span>BTC</span><span class="up">▲ 2,11 %</span></div>
+        <p class="note">donnée d'exemple</p>
+      </div>
+    </div>
+
+    <div class="status" id="status">chargement du suivi de visage…</div>
+    <div class="cam-preview" id="camPreview" hidden>
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="start-layer" id="startLayer">
+      <button class="start-btn" id="startBtn" disabled>Activer la caméra</button>
+      <p class="start-note" id="startNote">Chargement du modèle de suivi de visage (MediaPipe) : nécessite une connexion internet la première fois, puis l'autorisation de la caméra.</p>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  const clockEl = document.getElementById('clock');
+  const dateEl = document.getElementById('dateLine');
+  function tickClock() {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString('fr-FR');
+    dateEl.textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  const stage = document.getElementById('stage');
+  const widgetsEl = document.getElementById('widgets');
+  const statusEl = document.getElementById('status');
+  const startLayer = document.getElementById('startLayer');
+  const startBtn = document.getElementById('startBtn');
+  const startNote = document.getElementById('startNote');
+  const camPreview = document.getElementById('camPreview');
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const octx = overlay.getContext('2d');
+
+  let faceLandmarker = null;
+  let lastVideoTime = -1;
+
+  // Hysteresis so a blink or a half-second glance away doesn't flicker the UI.
+  let attentiveStreak = 0;
+  let awayStreak = 0;
+  let isAttentive = false;
+  const STREAK_ON = 4;   // consecutive "looking" frames before revealing
+  const STREAK_OFF = 10; // consecutive "away" frames before hiding (a bit more forgiving)
+
+  async function loadModel() {
+    try {
+      const { FaceLandmarker, FilesetResolver } = await import(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"
+      );
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numFaces: 1,
+        outputFaceBlendshapes: true,
+        outputFacialTransformationMatrixes: false,
+      });
+      return true;
+    } catch (err) {
+      console.error('MediaPipe load failed', err);
+      return false;
+    }
+  }
+
+
+  // Un cadre (iframe) ne transmet la caméra ou le micro que si la page qui
+  // l'intègre le déclare explicitement (attribut allow). Sans cette
+  // délégation, getUserMedia échoue immédiatement, sans même afficher la
+  // demande d'autorisation : inutile alors de conseiller d'autoriser le
+  // périphérique, il n'y a rien à autoriser.
+  function dansUnCadre() {
+    return window.self !== window.top;
+  }
+  // featurePolicy ne répond pas de façon fiable dans tous les contextes : on
+  // ne s'en sert que pour prévenir en amont quand il dit non de façon nette.
+  function delegationRefusee(peripherique) {
+    if (!dansUnCadre()) return false;
+    try {
+      if (document.featurePolicy && document.featurePolicy.allowsFeature) {
+        return !document.featurePolicy.allowsFeature(peripherique);
+      }
+    } catch (e) {}
+    return false;
+  }
+  var MESSAGE_CADRE_CAMERA = "Cette page est ouverte dans un cadre qui ne transmet pas la caméra : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que la caméra fonctionne.";
+  var MESSAGE_CADRE_MICRO = "Cette page est ouverte dans un cadre qui ne transmet pas le micro : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que le micro fonctionne.";
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false });
+      video.srcObject = stream;
+      await video.play();
+      return true;
+    } catch (err) {
+      console.error('camera error', err);
+      return false;
+    }
+  }
+
+  function dist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function setAttentive(v) {
+    if (v === isAttentive) return;
+    isAttentive = v;
+    widgetsEl.classList.toggle('hidden', !v);
+  }
+
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!faceLandmarker || video.readyState < 2) return;
+    if (video.currentTime === lastVideoTime) return;
+    lastVideoTime = video.currentTime;
+
+    const result = faceLandmarker.detectForVideo(video, performance.now());
+    overlay.width = camPreview.clientWidth;
+    overlay.height = camPreview.clientHeight;
+    octx.clearRect(0, 0, overlay.width, overlay.height);
+
+    const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
+    if (!hasFace) {
+      attentiveStreak = 0;
+      awayStreak = Math.min(awayStreak + 1, STREAK_OFF);
+      if (awayStreak >= STREAK_OFF) setAttentive(false);
+      statusEl.textContent = 'aucun visage détecté';
+      return;
+    }
+
+    const lm = result.faceLandmarks[0];
+    const nose = lm[1];
+    const left = lm[234];
+    const right = lm[454];
+
+    [nose, left, right].forEach(p => {
+      octx.beginPath();
+      octx.arc(p.x * overlay.width, p.y * overlay.height, 3.5, 0, Math.PI * 2);
+      octx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#161616';
+      octx.fill();
+    });
+
+    // Roughly frontal face: nose should sit near the midpoint of the two cheek landmarks.
+    const dLeft = dist(nose, left);
+    const dRight = dist(nose, right);
+    const symmetry = Math.min(dLeft, dRight) / Math.max(dLeft, dRight); // 1 = perfectly frontal
+    const facingScreen = symmetry > 0.62;
+
+    // Eyes open, from face blendshapes (ARKit-style categories).
+    let eyesOpen = true;
+    const blendshapes = result.faceBlendshapes && result.faceBlendshapes[0] && result.faceBlendshapes[0].categories;
+    if (blendshapes) {
+      const blink = (name) => blendshapes.find(c => c.categoryName === name)?.score ?? 0;
+      const avgBlink = (blink('eyeBlinkLeft') + blink('eyeBlinkRight')) / 2;
+      eyesOpen = avgBlink < 0.5;
+    }
+
+    const looking = facingScreen && eyesOpen;
+
+    if (looking) {
+      attentiveStreak = Math.min(attentiveStreak + 1, STREAK_ON);
+      awayStreak = 0;
+      if (attentiveStreak >= STREAK_ON) setAttentive(true);
+    } else {
+      awayStreak = Math.min(awayStreak + 1, STREAK_OFF);
+      attentiveStreak = 0;
+      if (awayStreak >= STREAK_OFF) setAttentive(false);
+    }
+
+    statusEl.textContent = isAttentive
+      ? 'vous regardez l’écran'
+      : (!facingScreen ? 'visage détecté, tourné ailleurs' : 'yeux fermés');
+  }
+
+  async function boot() {
+    if (!('mediaDevices' in navigator)) {
+      startNote.textContent = "Ce navigateur ne propose pas l'accès caméra. Ouvrez cette page dans Chrome ou Arc, en local, avec la caméra autorisée.";
+      return;
+    }
+    const modelOk = await loadModel();
+    if (!modelOk) {
+      startNote.textContent = "Le modèle de suivi de visage n'a pas pu se charger (connexion internet nécessaire au premier chargement). Réessayez, ou ouvrez cette page en local dans Chrome/Arc.";
+      return;
+    }
+    startBtn.disabled = false;
+    startNote.textContent = delegationRefusee("camera")
+      ? MESSAGE_CADRE_CAMERA
+      : "Modèle chargé. Cliquez pour autoriser la caméra et commencer.";
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      startNote.textContent = "Demande d'accès à la caméra…";
+      const ok = await startCamera();
+      if (!ok) {
+        startNote.textContent = dansUnCadre()
+          ? MESSAGE_CADRE_CAMERA
+          : "Caméra refusée ou indisponible. Autorisez-la dans les réglages du site puis rechargez la page.";
+        startBtn.disabled = false;
+        return;
+      }
+      startLayer.remove();
+      camPreview.hidden = false;
+      statusEl.textContent = 'analyse en cours…';
+      loop();
+    });
+  }
+
+  boot();
+</script>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page HTML autonome où des widgets n'apparaissent que lorsque l'utilisateur regarde l'écran, et s'effacent dès qu'il détourne le regard.
+
+Utilise MediaPipe Tasks Vision (FaceLandmarker, le modèle de suivi de visage de Google) avec les blendshapes activés, qui donnent des scores d'expression du visage, dont l'ouverture de chaque œil. Considère l'utilisateur attentif si son visage fait face à la caméra et que ses yeux sont ouverts. Attends quelques images consécutives avant de basculer d'un état à l'autre, sinon l'interface clignote au moindre clignement.
+
+Tout se calcule dans le navigateur. Gère proprement le refus d'accès à la caméra.</pre>
+</div>
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) {
+    panel.hidden = !open;
+    tab.setAttribute('aria-expanded', String(open));
+  }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    cb();
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    var done = function () {
+      copyBtn.textContent = 'Copié';
+      setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  });
+})();
+</script>
+</body>
+</html>

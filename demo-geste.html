@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geste</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --grain: #e4e4e4;
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --card: #f5f5f5;
+    --card-edge: #cfcfcf;
+    --accent: #161616;
+    --accent-2: #6e6e6e;
+    --ring: #161616;
+    --pinch: #000000;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --grain: #171717;
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --card: #171717;
+      --card-edge: #3a3a3a;
+      --accent: #ececec;
+      --accent-2: #9a9a9a;
+      --ring: #ececec;
+      --pinch: #ffffff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a0a0a;
+    --grain: #171717;
+    --ink: #f2f2f2;
+    --ink-dim: #9a9a9a;
+    --card: #171717;
+    --card-edge: #3a3a3a;
+    --accent: #ececec;
+    --accent-2: #9a9a9a;
+    --ring: #ececec;
+    --pinch: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: 'Karla', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 190px;
+    min-height: 100%;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid var(--card-edge);
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--ground);
+  }
+  .home-link {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .side-nav a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+  .side-nav a:hover { color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--card); font-weight: 600; }
+  .side-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px 14px;
+    border-left: 1px solid var(--card-edge);
+    padding-left: 10px;
+  }
+  .side-sub a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 11px;
+    padding: 5px 6px;
+    border-radius: 5px;
+  }
+  .side-sub a:hover { color: var(--ink); }
+
+  main.content {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, color-mix(in srgb, var(--grain) 70%, transparent) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, color-mix(in srgb, var(--grain) 70%, transparent) 40px),
+      var(--ground);
+  }
+
+  header {
+    padding: 20px clamp(18px, 4vw, 40px) 6px;
+    max-width: 680px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+
+  h1 {
+    font-family: 'Calistoga', Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(19px, 2.6vw, 24px);
+    margin: 0 0 8px;
+    text-wrap: balance;
+  }
+
+  .intro {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin: 0 0 4px;
+    max-width: 62ch;
+  }
+
+  .caution {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--ink-dim);
+    border-left: 2px solid var(--accent-2);
+    padding-left: 8px;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    margin: 0 clamp(10px, 3vw, 30px) clamp(10px, 3vw, 30px);
+    border: 1px dashed var(--card-edge);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  .tile {
+    position: absolute;
+    width: 168px;
+    min-height: 108px;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    border-radius: 8px;
+    padding: 14px 16px;
+    box-shadow: 0 6px 16px -6px rgba(0,0,0,0.25);
+    user-select: none;
+    will-change: transform;
+    transition: box-shadow 0.15s ease, transform 0.05s linear;
+  }
+
+  .tile.grabbed {
+    box-shadow: 0 14px 28px -8px rgba(0,0,0,0.4);
+    z-index: 60;
+    outline: 2px solid var(--pinch);
+  }
+
+  .tile .num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+  }
+
+  .tile h2 {
+    font-family: 'Calistoga', Georgia, serif;
+    font-size: 15px;
+    font-weight: 600;
+    margin: 6px 0 4px;
+  }
+
+  .tile p {
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--ink-dim);
+    margin: 0;
+  }
+
+  .cursor {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    margin-left: -13px;
+    margin-top: -13px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    pointer-events: none;
+    z-index: 80;
+    transition: background 0.1s ease, border-color 0.1s ease, transform 0.1s ease;
+    display: none;
+  }
+  .cursor.pinching {
+    background: color-mix(in srgb, var(--pinch) 45%, transparent);
+    border-color: var(--pinch);
+    transform: scale(0.7);
+  }
+
+  .status {
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    background: color-mix(in srgb, var(--ground) 80%, transparent);
+    padding: 4px 9px;
+    border-radius: 4px;
+    z-index: 90;
+    max-width: 60%;
+  }
+
+  .cam-preview {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    width: 176px;
+    height: 132px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--card-edge);
+    z-index: 90;
+    background: #000;
+  }
+  .cam-preview video, .cam-preview canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    object-fit: cover;
+  }
+
+  .start-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    text-align: center;
+    padding: 20px;
+  }
+
+  .start-btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ground);
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 22px;
+    cursor: pointer;
+  }
+  .start-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .start-note {
+    max-width: 44ch;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  footer {
+    padding: 8px clamp(18px, 4vw, 40px) 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .reset {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  /* ---- Prompt recopiable : encart noir, indépendant du thème clair/sombre ---- */
+  .prompt-tab {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    background: #000000;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 7px 13px;
+    cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed;
+    bottom: 54px;
+    left: 14px;
+    z-index: 1200;
+    width: min(430px, calc(100vw - 34px));
+    max-height: min(62vh, 460px);
+    display: flex;
+    flex-direction: column;
+    background: #000000;
+    color: #f2f2f2;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a2a2a;
+    flex: 0 0 auto;
+  }
+  .prompt-panel-head h2 {
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    font-weight: 600;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    font-family: inherit;
+    font-size: 11px;
+    color: #f2f2f2;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre {
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: #f2f2f2;
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Calistoga&family=Karla:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-animations.html">Animations</a>
+    <div class="side-sub">
+      <a href="demo-animations.html#grille">Grille</a>
+      <a href="demo-animations.html#glisser">Glisser</a>
+      <a href="demo-animations.html#texte">Texte</a>
+    </div>
+  </nav>
+</aside>
+<script>
+  (function () {
+    var here = location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.side-nav > a').forEach(function (a) {
+      if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
+    });
+  })();
+</script>
+
+<main class="content">
+  <header>
+    <p class="eyebrow">Démo : interface gestuelle par caméra</p>
+    <h1>Aucun bouton. Seulement le geste, suivi par la caméra.</h1>
+    <p class="intro">Pincez le pouce et l'index en l'air pour attraper un fragment d'histoire, déplacez la main pour le glisser, ouvrez les doigts pour le lâcher. Votre webcam suit votre main en temps réel : aucune image n'est envoyée où que ce soit, tout reste dans le navigateur.</p>
+    <p class="caution">⚠️ <em>Gorilla arm effect</em> : gardez le coude proche du corps, ne tendez pas le bras en l'air trop longtemps. Une bonne interface gestuelle fatigue le moins possible.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <div class="status" id="status">chargement du suivi de main…</div>
+    <div class="cam-preview" id="camPreview" hidden>
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+    </div>
+    <div class="cursor" id="cursor"></div>
+
+    <div class="start-layer" id="startLayer">
+      <button class="start-btn" id="startBtn" disabled>Activer la caméra</button>
+      <p class="start-note" id="startNote">Chargement du modèle de suivi de main (MediaPipe) : nécessite une connexion internet la première fois, puis l'autorisation de la caméra.</p>
+    </div>
+  </div>
+
+  <footer>
+    <button class="reset" id="resetBtn">réinitialiser la table</button>
+  </footer>
+</main>
+
+<script type="module">
+  const FRAGMENTS = [
+    { num: '01', title: 'Le besoin', text: "Ce qui manque au personnage, au quotidien, sans qu'il sache encore le nommer." },
+    { num: '02', title: 'Le lieu', text: "Où se joue la scène : une pièce, un trajet, un objet posé sur une table." },
+    { num: '03', title: "Le déclencheur", text: "L'instant précis où l'interface entre en jeu." },
+    { num: '04', title: 'Le geste', text: "Ce que fait le personnage pour interagir : parler, toucher, se taire." },
+    { num: '05', title: 'La réponse', text: "Ce que l'interface change dans la scène, et ce que ça change pour lui." },
+  ];
+
+  const stage = document.getElementById('stage');
+  const statusEl = document.getElementById('status');
+  const cursorEl = document.getElementById('cursor');
+  const startLayer = document.getElementById('startLayer');
+  const startBtn = document.getElementById('startBtn');
+  const startNote = document.getElementById('startNote');
+  const camPreview = document.getElementById('camPreview');
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const octx = overlay.getContext('2d');
+
+  let zTop = 1;
+  let state = [];
+
+  function layout() {
+    const rect = stage.getBoundingClientRect();
+    const cols = Math.max(1, Math.floor(rect.width / 200));
+    return FRAGMENTS.map((f, i) => ({
+      ...f,
+      x: 24 + (i % cols) * 190 + (i * 11) % 40,
+      y: 24 + Math.floor(i / cols) * 130 + (i * 7) % 30,
+      el: null,
+    }));
+  }
+
+  function render() {
+    stage.querySelectorAll('.tile').forEach(t => t.remove());
+    state.forEach((f, i) => {
+      const el = document.createElement('div');
+      el.className = 'tile';
+      el.style.zIndex = i + 1;
+      el.innerHTML = `<span class="num">${f.num}</span><h2>${f.title}</h2><p>${f.text}</p>`;
+      el.style.left = f.x + 'px';
+      el.style.top = f.y + 'px';
+      stage.appendChild(el);
+      f.el = el;
+    });
+  }
+
+  function init() {
+    state = layout();
+    render();
+  }
+  document.getElementById('resetBtn').addEventListener('click', init);
+  window.addEventListener('resize', () => {
+    const cols = state.length;
+    state = layout().map((f, i) => ({ ...f, x: state[i] ? state[i].x : f.x, y: state[i] ? state[i].y : f.y }));
+    render();
+  });
+  init();
+
+  // ---- Hand tracking ----
+  let handLandmarker = null;
+  let grabbedIndex = -1;
+  let grabOffset = { x: 0, y: 0 };
+  let lastVideoTime = -1;
+  const PINCH_ON = 0.055;
+  const PINCH_OFF = 0.08;
+  let pinching = false;
+
+  async function loadModel() {
+    try {
+      const { HandLandmarker, FilesetResolver } = await import(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"
+      );
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+      handLandmarker = await HandLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numHands: 1,
+      });
+      return true;
+    } catch (err) {
+      console.error('MediaPipe load failed', err);
+      return false;
+    }
+  }
+
+
+  // Un cadre (iframe) ne transmet la caméra ou le micro que si la page qui
+  // l'intègre le déclare explicitement (attribut allow). Sans cette
+  // délégation, getUserMedia échoue immédiatement, sans même afficher la
+  // demande d'autorisation : inutile alors de conseiller d'autoriser le
+  // périphérique, il n'y a rien à autoriser.
+  function dansUnCadre() {
+    return window.self !== window.top;
+  }
+  // featurePolicy ne répond pas de façon fiable dans tous les contextes : on
+  // ne s'en sert que pour prévenir en amont quand il dit non de façon nette.
+  function delegationRefusee(peripherique) {
+    if (!dansUnCadre()) return false;
+    try {
+      if (document.featurePolicy && document.featurePolicy.allowsFeature) {
+        return !document.featurePolicy.allowsFeature(peripherique);
+      }
+    } catch (e) {}
+    return false;
+  }
+  var MESSAGE_CADRE_CAMERA = "Cette page est ouverte dans un cadre qui ne transmet pas la caméra : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que la caméra fonctionne.";
+  var MESSAGE_CADRE_MICRO = "Cette page est ouverte dans un cadre qui ne transmet pas le micro : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que le micro fonctionne.";
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false });
+      video.srcObject = stream;
+      await video.play();
+      return true;
+    } catch (err) {
+      console.error('camera error', err);
+      return false;
+    }
+  }
+
+  function dist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y, (a.z || 0) - (b.z || 0));
+  }
+
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!handLandmarker || video.readyState < 2) return;
+    if (video.currentTime === lastVideoTime) return;
+    lastVideoTime = video.currentTime;
+
+    const result = handLandmarker.detectForVideo(video, performance.now());
+    overlay.width = camPreview.clientWidth;
+    overlay.height = camPreview.clientHeight;
+    octx.clearRect(0, 0, overlay.width, overlay.height);
+
+    if (!result.landmarks || result.landmarks.length === 0) {
+      cursorEl.style.display = 'none';
+      if (grabbedIndex !== -1) { state[grabbedIndex].el.classList.remove('grabbed'); grabbedIndex = -1; }
+      statusEl.textContent = 'aucune main détectée, présentez-la à la caméra';
+      return;
+    }
+
+    const lm = result.landmarks[0];
+    const thumb = lm[4];
+    const index = lm[8];
+    const d = dist(thumb, index);
+
+    // draw on mini preview (already mirrored via CSS)
+    octx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#161616';
+    [thumb, index].forEach(p => {
+      octx.beginPath();
+      octx.arc(p.x * overlay.width, p.y * overlay.height, 5, 0, Math.PI * 2);
+      octx.fill();
+    });
+    octx.strokeStyle = octx.fillStyle;
+    octx.lineWidth = 2;
+    octx.beginPath();
+    octx.moveTo(thumb.x * overlay.width, thumb.y * overlay.height);
+    octx.lineTo(index.x * overlay.width, index.y * overlay.height);
+    octx.stroke();
+
+    if (!pinching && d < PINCH_ON) pinching = true;
+    else if (pinching && d > PINCH_OFF) pinching = false;
+
+    const stageRect = stage.getBoundingClientRect();
+    const cx = (1 - index.x) * stageRect.width;
+    const cy = index.y * stageRect.height;
+
+    cursorEl.style.display = 'block';
+    cursorEl.style.left = cx + 'px';
+    cursorEl.style.top = cy + 'px';
+    cursorEl.classList.toggle('pinching', pinching);
+
+    if (pinching && grabbedIndex === -1) {
+      for (let i = state.length - 1; i >= 0; i--) {
+        const f = state[i];
+        if (cx >= f.x && cx <= f.x + 168 && cy >= f.y && cy <= f.y + 108) {
+          grabbedIndex = i;
+          grabOffset = { x: cx - f.x, y: cy - f.y };
+          f.el.classList.add('grabbed');
+          f.el.style.zIndex = ++zTop;
+          break;
+        }
+      }
+    } else if (!pinching && grabbedIndex !== -1) {
+      state[grabbedIndex].el.classList.remove('grabbed');
+      grabbedIndex = -1;
+    }
+
+    if (pinching && grabbedIndex !== -1) {
+      const f = state[grabbedIndex];
+      f.x = cx - grabOffset.x;
+      f.y = cy - grabOffset.y;
+      f.el.style.left = f.x + 'px';
+      f.el.style.top = f.y + 'px';
+      statusEl.textContent = `« ${f.title} » saisi · pince ${(d).toFixed(3)}`;
+    } else {
+      statusEl.textContent = pinching ? 'pince détectée, rien à saisir ici' : `main suivie · pince ${(d).toFixed(3)}`;
+    }
+  }
+
+  async function boot() {
+    const camReady = 'mediaDevices' in navigator;
+    if (!camReady) {
+      startNote.textContent = "Ce navigateur ne propose pas l'accès caméra (getUserMedia). Ouvrez cette page dans Chrome ou Arc, en local, avec la caméra autorisée.";
+      return;
+    }
+    const modelOk = await loadModel();
+    if (!modelOk) {
+      startNote.textContent = "Le modèle de suivi de main n'a pas pu se charger (connexion internet nécessaire au premier chargement). Réessayez, ou ouvrez cette page en local dans Chrome/Arc.";
+      return;
+    }
+    startBtn.disabled = false;
+    startNote.textContent = delegationRefusee("camera")
+      ? MESSAGE_CADRE_CAMERA
+      : "Modèle chargé. Cliquez pour autoriser la caméra et commencer.";
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      startNote.textContent = "Demande d'accès à la caméra…";
+      const ok = await startCamera();
+      if (!ok) {
+        startNote.textContent = dansUnCadre()
+          ? MESSAGE_CADRE_CAMERA
+          : "Caméra refusée ou indisponible. Autorisez-la dans les réglages du site puis rechargez la page.";
+        startBtn.disabled = false;
+        return;
+      }
+      startLayer.remove();
+      camPreview.hidden = false;
+      statusEl.textContent = 'main suivie…';
+      loop();
+    });
+  }
+
+  boot();
+</script>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page HTML autonome où on manipule des éléments à la main devant la webcam, sans souris ni clavier.
+
+Utilise MediaPipe Tasks Vision (HandLandmarker, le modèle de suivi de main de Google) pour détecter les points de repère de la main. Quand le pouce et l'index se rapprochent, considère la main en pincement et attache l'élément visé au curseur ; quand ils s'écartent, dépose-le. Prévois deux seuils différents pour la fermeture et l'ouverture, sinon le pincement clignote.
+
+Tout se calcule dans le navigateur, aucune image n'est envoyée. Gère proprement le refus d'accès à la caméra.</pre>
+</div>
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) {
+    panel.hidden = !open;
+    tab.setAttribute('aria-expanded', String(open));
+  }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    cb();
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    var done = function () {
+      copyBtn.textContent = 'Copié';
+      setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  });
+})();
+</script>
+</body>
+</html>

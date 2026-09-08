@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voix</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --surface: #f0f0f0;
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --accent: #161616;
+    --accent-soft: #545454;
+    --ring: #111111;
+    --line: rgba(17,17,17,0.14);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --surface: #171717;
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --accent: #ececec;
+      --accent-soft: #b0b0b0;
+      --ring: #ececec;
+      --line: rgba(242,242,242,0.16);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a0a0a;
+    --surface: #171717;
+    --ink: #f2f2f2;
+    --ink-dim: #9a9a9a;
+    --accent: #ececec;
+    --accent-soft: #b0b0b0;
+    --ring: #ececec;
+    --line: rgba(242,242,242,0.16);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 190px;
+    min-height: 100vh;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid var(--line);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .home-link {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .side-nav a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+  .side-nav a:hover { color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--surface); font-weight: 600; }
+  .side-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px 14px;
+    border-left: 1px solid var(--line);
+    padding-left: 10px;
+  }
+  .side-sub a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 11px;
+    padding: 5px 6px;
+    border-radius: 5px;
+  }
+  .side-sub a:hover { color: var(--ink); }
+
+  main.content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(18px, 4vw, 40px);
+    text-align: center;
+  }
+
+  header { max-width: 640px; }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+
+  h1 {
+    font-family: 'Calistoga', Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(20px, 3vw, 27px);
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+
+  .intro {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 0 0 4px;
+  }
+
+  .stage {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    max-width: 720px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 18px 0 10px;
+    min-height: 260px;
+  }
+
+  canvas#viz {
+    width: 100%;
+    max-width: 560px;
+    aspect-ratio: 1 / 1;
+    display: block;
+  }
+
+  .readouts {
+    display: flex;
+    gap: 22px;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin-bottom: 4px;
+  }
+  .readouts b {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .state-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    min-height: 16px;
+    margin-bottom: 6px;
+  }
+
+  .start-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    text-align: center;
+    padding: 20px;
+  }
+  .start-btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ground);
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 24px;
+    cursor: pointer;
+  }
+  .start-btn:disabled { opacity: 0.5; cursor: default; }
+  .start-note {
+    max-width: 42ch;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  .unsupported {
+    max-width: 420px;
+    font-size: 14px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  /* ---- Prompt recopiable : encart noir, indépendant du thème clair/sombre ---- */
+  .prompt-tab {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    background: #000000;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 7px 13px;
+    cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed;
+    bottom: 54px;
+    left: 14px;
+    z-index: 1200;
+    width: min(430px, calc(100vw - 34px));
+    max-height: min(62vh, 460px);
+    display: flex;
+    flex-direction: column;
+    background: #000000;
+    color: #f2f2f2;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a2a2a;
+    flex: 0 0 auto;
+  }
+  .prompt-panel-head h2 {
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    font-weight: 600;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    font-family: inherit;
+    font-size: 11px;
+    color: #f2f2f2;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre {
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: #f2f2f2;
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Calistoga&family=Manrope:wght@500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-animations.html">Animations</a>
+    <div class="side-sub">
+      <a href="demo-animations.html#grille">Grille</a>
+      <a href="demo-animations.html#glisser">Glisser</a>
+      <a href="demo-animations.html#texte">Texte</a>
+    </div>
+  </nav>
+</aside>
+<script>
+  (function () {
+    var here = location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.side-nav > a').forEach(function (a) {
+      if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
+    });
+  })();
+</script>
+
+<main class="content">
+  <header>
+    <p class="eyebrow">Démo : interface qui répond à la voix, pas aux mots</p>
+    <h1>Elle ne comprend pas ce que vous dites. Elle sent comment vous le dites.</h1>
+    <p class="intro">Parlez, chantonnez, chuchotez, criez : la forme réagit en direct à votre <b>volume</b>, à la <b>hauteur</b> de votre voix et à son <b>timbre</b>, calculés localement à partir du micro.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="viz" width="600" height="600"></canvas>
+
+    <div class="start-layer" id="startLayer">
+      <button class="start-btn" id="startBtn">Activer le micro</button>
+      <p class="start-note" id="startNote">Fonctionne hors ligne, sans envoyer aucun son nulle part : tout le calcul reste dans le navigateur.</p>
+    </div>
+  </div>
+
+  <p class="state-label" id="stateLabel"></p>
+  <div class="readouts" id="readouts" hidden>
+    <span>volume <b id="volOut">0%</b></span>
+    <span>hauteur <b id="pitchOut">·</b></span>
+    <span>timbre <b id="timbreOut">·</b></span>
+  </div>
+</main>
+
+<script>
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('viz');
+  const ctx = canvas.getContext('2d');
+  const startLayer = document.getElementById('startLayer');
+  const startBtn = document.getElementById('startBtn');
+  const startNote = document.getElementById('startNote');
+  const stateLabel = document.getElementById('stateLabel');
+  const readouts = document.getElementById('readouts');
+  const volOut = document.getElementById('volOut');
+  const pitchOut = document.getElementById('pitchOut');
+  const timbreOut = document.getElementById('timbreOut');
+
+  function inkColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#111111';
+  }
+  function dimColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--ink-dim').trim() || '#6e6e6e';
+  }
+
+  if (!('mediaDevices' in navigator) || !navigator.mediaDevices.getUserMedia) {
+    startLayer.innerHTML = '';
+    const note = document.createElement('p');
+    note.className = 'unsupported';
+    note.textContent = "Ce navigateur ne propose pas l'accès au micro. Ouvrez cette page dans Chrome ou Arc, avec le micro autorisé.";
+    startLayer.appendChild(note);
+  } else {
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      startNote.textContent = "Demande d'accès au micro…";
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        startLayer.remove();
+        readouts.hidden = false;
+        boot(stream);
+      } catch (err) {
+        startNote.textContent = dansUnCadre()
+          ? MESSAGE_CADRE_MICRO
+          : "Micro refusé ou indisponible. Autorisez-le dans les réglages du site puis rechargez la page.";
+        startBtn.disabled = false;
+      }
+    });
+  }
+
+
+  // Un cadre (iframe) ne transmet la caméra ou le micro que si la page qui
+  // l'intègre le déclare explicitement (attribut allow). Sans cette
+  // délégation, getUserMedia échoue immédiatement, sans même afficher la
+  // demande d'autorisation : inutile alors de conseiller d'autoriser le
+  // périphérique, il n'y a rien à autoriser.
+  function dansUnCadre() {
+    return window.self !== window.top;
+  }
+  // featurePolicy ne répond pas de façon fiable dans tous les contextes : on
+  // ne s'en sert que pour prévenir en amont quand il dit non de façon nette.
+  function delegationRefusee(peripherique) {
+    if (!dansUnCadre()) return false;
+    try {
+      if (document.featurePolicy && document.featurePolicy.allowsFeature) {
+        return !document.featurePolicy.allowsFeature(peripherique);
+      }
+    } catch (e) {}
+    return false;
+  }
+  var MESSAGE_CADRE_CAMERA = "Cette page est ouverte dans un cadre qui ne transmet pas la caméra : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que la caméra fonctionne.";
+  var MESSAGE_CADRE_MICRO = "Cette page est ouverte dans un cadre qui ne transmet pas le micro : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que le micro fonctionne.";
+
+  function detectPitch(buf, sampleRate) {
+    const SIZE = buf.length;
+    let rms = 0;
+    for (let i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / SIZE);
+    if (rms < 0.012) return -1;
+
+    const minLag = Math.floor(sampleRate / 500); // ~500 Hz ceiling
+    const maxLag = Math.min(Math.floor(sampleRate / 70), SIZE - 1); // ~70 Hz floor
+    let bestLag = -1, bestCorr = 0;
+    for (let lag = minLag; lag <= maxLag; lag++) {
+      let corr = 0;
+      for (let i = 0; i < SIZE - lag; i++) corr += buf[i] * buf[i + lag];
+      corr = corr / (SIZE - lag);
+      if (corr > bestCorr) { bestCorr = corr; bestLag = lag; }
+    }
+    if (bestLag <= 0 || bestCorr < 0.0025) return -1;
+    return sampleRate / bestLag;
+  }
+
+  function spectralCentroid(freqData, sampleRate, fftSize) {
+    let num = 0, den = 0;
+    const binHz = sampleRate / fftSize;
+    for (let i = 0; i < freqData.length; i++) {
+      const mag = freqData[i] / 255;
+      num += (i * binHz) * mag;
+      den += mag;
+    }
+    return den > 0 ? num / den : 0;
+  }
+
+  function boot(stream) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioCtx();
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    analyser.smoothingTimeConstant = 0.6;
+    source.connect(analyser);
+
+    const timeBuf = new Float32Array(analyser.fftSize);
+    const freqBuf = new Uint8Array(analyser.frequencyBinCount);
+
+    let smoothVol = 0;
+    let smoothPitch = 0;
+    let heldPitch = -1;
+    let smoothBrightness = 0;
+    let silenceStreak = 0;
+    let t = 0;
+
+    function frame() {
+      requestAnimationFrame(frame);
+      analyser.getFloatTimeDomainData(timeBuf);
+      analyser.getByteFrequencyData(freqBuf);
+
+      let rms = 0;
+      for (let i = 0; i < timeBuf.length; i++) rms += timeBuf[i] * timeBuf[i];
+      rms = Math.sqrt(rms / timeBuf.length);
+      const vol = Math.min(1, rms * 6);
+      smoothVol = smoothVol * 0.82 + vol * 0.18;
+
+      const pitchHz = detectPitch(timeBuf, audioCtx.sampleRate);
+      if (pitchHz > 0) {
+        heldPitch = pitchHz;
+        smoothPitch = smoothPitch === 0 ? pitchHz : smoothPitch * 0.75 + pitchHz * 0.25;
+      }
+
+      const centroid = spectralCentroid(freqBuf, audioCtx.sampleRate, analyser.fftSize);
+      smoothBrightness = smoothBrightness * 0.85 + Math.min(1, centroid / 4000) * 0.15;
+
+      if (smoothVol < 0.035) silenceStreak++; else silenceStreak = 0;
+      const isSilent = silenceStreak > 20;
+
+      t += 0.02 + smoothVol * 0.03;
+      draw(smoothVol, smoothPitch || heldPitch, smoothBrightness, isSilent, t);
+
+      volOut.textContent = Math.round(smoothVol * 100) + '%';
+      pitchOut.textContent = (smoothPitch > 0 && !isSilent) ? Math.round(smoothPitch) + ' Hz' : '·';
+      const label = isSilent ? '·' : (smoothBrightness < 0.18 ? 'grave' : smoothBrightness < 0.4 ? 'moyen' : 'clair');
+      timbreOut.textContent = label;
+      stateLabel.textContent = isSilent ? 'silence, l’interface respire' : 'elle vous sent en direct';
+    }
+
+    function draw(vol, pitch, brightness, isSilent, t) {
+      const w = canvas.width, h = canvas.height;
+      const cx = w / 2, cy = h / 2;
+      ctx.clearRect(0, 0, w, h);
+
+      const ink = inkColor();
+      const dim = dimColor();
+
+      if (isSilent) {
+        const breathe = 0.5 + 0.5 * Math.sin(t * 0.6);
+        const r = w * 0.14 + breathe * w * 0.02;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = dim;
+        ctx.globalAlpha = 0.55;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        return;
+      }
+
+      const minR = w * 0.16;
+      const maxR = w * 0.42;
+      const baseR = minR + vol * (maxR - minR);
+      const spokeFactor = Math.max(3, Math.min(26, (Math.max(70, Math.min(500, pitch || 140)) - 70) / 430 * 23 + 3));
+      const jitter = 6 + brightness * 26;
+
+      const layers = [
+        { scale: 1, alpha: 0.9, width: 2, dash: 0 },
+        { scale: 0.86, alpha: 0.45, width: 1.4, dash: 0.6 },
+        { scale: 1.12, alpha: 0.22, width: 1, dash: -0.9 },
+      ];
+
+      layers.forEach((layer) => {
+        ctx.beginPath();
+        const steps = 220;
+        for (let i = 0; i <= steps; i++) {
+          const angle = (i / steps) * Math.PI * 2;
+          const r = baseR * layer.scale
+            + Math.sin(angle * spokeFactor + t * (2 + layer.dash)) * (vol * 20)
+            + Math.sin(angle * spokeFactor * 2.3 - t * (3 + layer.dash)) * jitter * 0.5;
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = ink;
+        ctx.globalAlpha = layer.alpha;
+        ctx.lineWidth = layer.width;
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = ink;
+      ctx.fill();
+    }
+
+    frame();
+  }
+</script>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page HTML autonome où une forme abstraite réagit en temps réel à la voix, sans reconnaissance vocale ni transcription.
+
+Utilise l'API Web Audio native du navigateur (AudioContext et AnalyserNode, l'analyseur audio intégré) pour capter le micro et en extraire trois valeurs à chaque image : le volume, la hauteur de la voix et son timbre. Mappe ces trois valeurs sur des propriétés visuelles distinctes d'une forme dessinée en Canvas 2D, avec un lissage pour éviter les à-coups.
+
+Aucune librairie externe. Gère proprement le refus d'accès au micro.</pre>
+</div>
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) {
+    panel.hidden = !open;
+    tab.setAttribute('aria-expanded', String(open));
+  }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    cb();
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    var done = function () {
+      copyBtn.textContent = 'Copié';
+      setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  });
+})();
+</script>
+</body>
+</html>

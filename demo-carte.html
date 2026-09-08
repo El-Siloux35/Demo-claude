@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carte</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --panel: rgba(0,0,0,0.035);
+    --panel-edge: rgba(0,0,0,0.12);
+    --line: rgba(17,17,17,0.10);
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --accent: #161616;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --panel: rgba(255,255,255,0.055);
+      --panel-edge: rgba(255,255,255,0.12);
+      --line: rgba(242,242,242,0.12);
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --accent: #ececec;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0a0a0a;
+    --panel: rgba(255,255,255,0.055);
+    --panel-edge: rgba(255,255,255,0.12);
+    --line: rgba(242,242,242,0.12);
+    --ink: #f2f2f2;
+    --ink-dim: #9a9a9a;
+    --accent: #ececec;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    color: var(--ink);
+    font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 190px;
+    min-height: 100vh;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid var(--panel-edge);
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--ground);
+    z-index: 200;
+  }
+  .home-link {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .side-nav a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+  .side-nav a:hover { color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--panel); font-weight: 600; }
+  .side-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px 14px;
+    border-left: 1px solid var(--panel-edge);
+    padding-left: 10px;
+  }
+  .side-sub a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    font-size: 11px;
+    padding: 5px 6px;
+    border-radius: 5px;
+  }
+  .side-sub a:hover { color: var(--ink); }
+
+  main.content {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .world-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .world-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 0 0;
+    will-change: transform;
+  }
+  #worldCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: block;
+  }
+
+  .stop {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .stop-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid var(--ground);
+    box-shadow: 0 0 0 1px var(--panel-edge);
+  }
+  .stop-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--ground) 82%, transparent);
+    padding: 3px 7px;
+    border-radius: 4px;
+  }
+
+  header.overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: clamp(18px, 4vw, 40px);
+    text-align: center;
+    pointer-events: none;
+    z-index: 20;
+  }
+  header.overlay .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 8px;
+  }
+  header.overlay h1 {
+    font-family: 'Calistoga', Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(19px, 2.6vw, 25px);
+    margin: 0 auto 8px;
+    max-width: 620px;
+    text-wrap: balance;
+  }
+  header.overlay .intro {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto;
+    background: color-mix(in srgb, var(--ground) 78%, transparent);
+    border-radius: 8px;
+    padding: 2px 8px;
+    display: inline-block;
+  }
+
+  .status-bar {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    background: color-mix(in srgb, var(--ground) 80%, transparent);
+    padding: 4px 9px;
+    border-radius: 4px;
+  }
+  .status .dir { color: var(--ink); font-weight: 600; }
+  .recalib-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    background: none;
+    border: none;
+    color: var(--ink-dim);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+  .recalib-btn:hover { color: var(--ink); }
+
+  .cam-preview {
+    position: absolute;
+    right: 14px;
+    bottom: 12px;
+    width: 176px;
+    height: 132px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--panel-edge);
+    z-index: 90;
+    background: #000;
+  }
+  .cam-preview video, .cam-preview canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: scaleX(-1);
+    object-fit: cover;
+  }
+
+  .zoom-controls {
+    position: absolute;
+    right: 14px;
+    top: 14px;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    background: color-mix(in srgb, var(--ground) 80%, transparent);
+    border: 1px solid var(--panel-edge);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .zoom-btn {
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    border-radius: 5px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .zoom-btn:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+  .zoom-btn:disabled { opacity: 0.35; cursor: default; }
+  .zoom-btn:disabled:hover { background: none; }
+  .zoom-readout {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-dim);
+    width: 38px;
+    text-align: center;
+  }
+
+  .start-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    text-align: center;
+    padding: 20px;
+  }
+  .start-btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ground);
+    background: var(--accent);
+    border: none;
+    border-radius: 999px;
+    padding: 11px 22px;
+    cursor: pointer;
+  }
+  .start-btn:disabled { opacity: 0.5; cursor: default; }
+  .start-note {
+    max-width: 46ch;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    line-height: 1.6;
+  }
+
+  /* ---- Prompt recopiable : encart noir, indépendant du thème clair/sombre ---- */
+  .prompt-tab {
+    position: fixed;
+    bottom: 14px;
+    left: 14px;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    color: #ffffff;
+    background: #000000;
+    border: 1px solid #2a2a2a;
+    border-radius: 999px;
+    padding: 7px 13px;
+    cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed;
+    bottom: 54px;
+    left: 14px;
+    z-index: 1200;
+    width: min(430px, calc(100vw - 34px));
+    max-height: min(62vh, 460px);
+    display: flex;
+    flex-direction: column;
+    background: #000000;
+    color: #f2f2f2;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #2a2a2a;
+    flex: 0 0 auto;
+  }
+  .prompt-panel-head h2 {
+    margin: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9a9a;
+    font-weight: 600;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    font-family: inherit;
+    font-size: 11px;
+    color: #f2f2f2;
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre {
+    margin: 0;
+    padding: 14px;
+    overflow: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: #f2f2f2;
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Calistoga&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-animations.html">Animations</a>
+    <div class="side-sub">
+      <a href="demo-animations.html#grille">Grille</a>
+      <a href="demo-animations.html#glisser">Glisser</a>
+      <a href="demo-animations.html#texte">Texte</a>
+    </div>
+  </nav>
+</aside>
+<script>
+  (function () {
+    var here = location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.side-nav > a').forEach(function (a) {
+      if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
+    });
+  })();
+</script>
+
+<main class="content">
+  <div class="world-wrap" id="worldWrap">
+    <div class="world-layer" id="worldLayer">
+      <canvas id="worldCanvas"></canvas>
+    </div>
+  </div>
+
+  <header class="overlay">
+    <p class="eyebrow">Démo : grande carte pilotée par le regard</p>
+    <h1>Une carte qu'on explore seulement avec la tête.</h1>
+    <p class="intro">Regardez à droite pour avancer, à gauche pour reculer, vers le haut pour monter, vers le bas pour descendre. Restez bien en face pour vous arrêter. Zoom : boutons +/&minus;, molette de la souris, ou touches +/&minus; du clavier.</p>
+  </header>
+
+  <div class="status-bar">
+    <span class="status" id="status">chargement du suivi de visage…</span>
+    <button class="recalib-btn" id="recalibBtn" hidden>recalibrer</button>
+  </div>
+  <div class="cam-preview" id="camPreview" hidden>
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="overlay"></canvas>
+  </div>
+  <div class="zoom-controls" id="zoomControls">
+    <button class="zoom-btn" id="zoomOutBtn" type="button" aria-label="Zoom arrière">&minus;</button>
+    <span class="zoom-readout" id="zoomReadout">100%</span>
+    <button class="zoom-btn" id="zoomInBtn" type="button" aria-label="Zoom avant">+</button>
+  </div>
+
+  <div class="start-layer" id="startLayer">
+    <button class="start-btn" id="startBtn" disabled>Activer la caméra</button>
+    <p class="start-note" id="startNote">Chargement du modèle de suivi de visage (MediaPipe) : nécessite une connexion internet la première fois, puis l'autorisation de la caméra. Une courte calibration suit, le temps de regarder l'écran bien en face.</p>
+  </div>
+</main>
+
+<script type="module">
+  const worldWrap = document.getElementById('worldWrap');
+  const worldLayer = document.getElementById('worldLayer');
+  const worldCanvas = document.getElementById('worldCanvas');
+  const wctx = worldCanvas.getContext('2d');
+  const statusEl = document.getElementById('status');
+  const recalibBtn = document.getElementById('recalibBtn');
+  const startLayer = document.getElementById('startLayer');
+  const startBtn = document.getElementById('startBtn');
+  const startNote = document.getElementById('startNote');
+  const camPreview = document.getElementById('camPreview');
+  const video = document.getElementById('video');
+  const overlay = document.getElementById('overlay');
+  const octx = overlay.getContext('2d');
+  const zoomInBtn = document.getElementById('zoomInBtn');
+  const zoomOutBtn = document.getElementById('zoomOutBtn');
+  const zoomReadout = document.getElementById('zoomReadout');
+
+  let faceLandmarker = null;
+  let lastVideoTime = -1;
+
+  // ---- The world: a map far bigger than the screen, with a random dot
+  // texture and grid so any panning direction is immediately visible, plus
+  // a zigzag route of stops to explore. ----
+  let worldW = 0, worldH = 0;
+  let panX = 0, panY = 0, maxPanX = 0, maxPanY = 0;
+  const STOPS = ['Départ', 'Étape 1', 'Étape 2', 'Étape 3', 'Étape 4', 'Étape 5', 'Arrivée'];
+  let stopPositions = [];
+
+  // ---- Zoom: discrete controls only (buttons, keyboard, wheel), never a
+  // gesture on this map. The head-turn channel already drives panning, so
+  // overloading it with zoom would make the two fight each other, and a
+  // button/key/wheel works no matter how the person is positioned.
+  const ZOOM_MIN = 0.5;
+  const ZOOM_MAX = 2.5;
+  const ZOOM_STEP = 0.2;
+  let zoom = 1;
+
+  function themeColor(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  function computeStopPositions() {
+    const marginX = 170;
+    const usableW = Math.max(1, worldW - marginX * 2);
+    const centerY = worldH / 2;
+    const amplitude = worldH * 0.22;
+    return STOPS.map((label, i) => {
+      const t = STOPS.length === 1 ? 0 : i / (STOPS.length - 1);
+      const x = marginX + t * usableW;
+      const edgeDamp = (i === 0 || i === STOPS.length - 1) ? 0.4 : 1;
+      const y = centerY + (i % 2 === 0 ? -amplitude : amplitude) * edgeDamp;
+      return { x, y, label };
+    });
+  }
+
+  function drawWorld() {
+    wctx.clearRect(0, 0, worldW, worldH);
+    const ink = themeColor('--ink', '#111111');
+    const line = themeColor('--line', 'rgba(17,17,17,0.1)');
+
+    // Reference grid, so position and motion both read clearly.
+    wctx.strokeStyle = line;
+    wctx.lineWidth = 1;
+    const cell = 230;
+    for (let x = 0; x <= worldW; x += cell) {
+      wctx.beginPath();
+      wctx.moveTo(x + 0.5, 0);
+      wctx.lineTo(x + 0.5, worldH);
+      wctx.stroke();
+    }
+    for (let y = 0; y <= worldH; y += cell) {
+      wctx.beginPath();
+      wctx.moveTo(0, y + 0.5);
+      wctx.lineTo(worldW, y + 0.5);
+      wctx.stroke();
+    }
+
+    // Random scattered texture: the actual "you're moving" cue, since a
+    // blank map looks identical everywhere you pan to.
+    const dotCount = Math.round((worldW * worldH) / 5200);
+    for (let i = 0; i < dotCount; i++) {
+      const x = Math.random() * worldW;
+      const y = Math.random() * worldH;
+      const r = 1 + Math.random() * 3.2;
+      wctx.beginPath();
+      wctx.arc(x, y, r, 0, Math.PI * 2);
+      wctx.fillStyle = ink;
+      wctx.globalAlpha = 0.08 + Math.random() * 0.32;
+      wctx.fill();
+    }
+    wctx.globalAlpha = 1;
+
+    // Dashed route connecting the stops.
+    if (stopPositions.length > 1) {
+      wctx.setLineDash([7, 7]);
+      wctx.strokeStyle = ink;
+      wctx.globalAlpha = 0.35;
+      wctx.lineWidth = 1.5;
+      wctx.beginPath();
+      stopPositions.forEach((p, i) => {
+        if (i === 0) wctx.moveTo(p.x, p.y); else wctx.lineTo(p.x, p.y);
+      });
+      wctx.stroke();
+      wctx.setLineDash([]);
+      wctx.globalAlpha = 1;
+    }
+  }
+
+  function placeStopLabels() {
+    worldLayer.querySelectorAll('.stop').forEach((el) => el.remove());
+    stopPositions.forEach((p) => {
+      const el = document.createElement('div');
+      el.className = 'stop';
+      el.style.left = p.x + 'px';
+      el.style.top = p.y + 'px';
+      el.innerHTML = '<span class="stop-dot"></span><span class="stop-label">' + p.label + '</span>';
+      worldLayer.appendChild(el);
+    });
+  }
+
+  function renderPan() {
+    worldLayer.style.transform = 'scale(' + zoom + ') translate(' + (-panX) + 'px, ' + (-panY) + 'px)';
+    zoomReadout.textContent = Math.round(zoom * 100) + '%';
+    zoomOutBtn.disabled = zoom <= ZOOM_MIN + 0.001;
+    zoomInBtn.disabled = zoom >= ZOOM_MAX - 0.001;
+  }
+
+  function updateBounds() {
+    const viewportW = worldWrap.clientWidth / zoom;
+    const viewportH = worldWrap.clientHeight / zoom;
+    maxPanX = Math.max(0, worldW - viewportW);
+    maxPanY = Math.max(0, worldH - viewportH);
+    panX = Math.min(panX, maxPanX);
+    panY = Math.min(panY, maxPanY);
+    renderPan();
+  }
+
+  // Zooms while keeping the point currently at the centre of the viewport
+  // anchored in world-space, so zooming in/out doesn't also fling the view
+  // sideways.
+  function setZoom(newZoom) {
+    const viewportW = worldWrap.clientWidth;
+    const viewportH = worldWrap.clientHeight;
+    const centerX = panX + (viewportW / zoom) / 2;
+    const centerY = panY + (viewportH / zoom) / 2;
+    zoom = clamp(newZoom, ZOOM_MIN, ZOOM_MAX);
+    panX = centerX - (viewportW / zoom) / 2;
+    panY = centerY - (viewportH / zoom) / 2;
+    updateBounds();
+  }
+
+  function buildWorld() {
+    const viewportW = worldWrap.clientWidth || window.innerWidth;
+    const viewportH = worldWrap.clientHeight || window.innerHeight;
+    worldW = Math.max(3600, Math.round(viewportW * 3.4));
+    worldH = Math.max(2600, Math.round(viewportH * 3.2));
+
+    worldLayer.style.width = worldW + 'px';
+    worldLayer.style.height = worldH + 'px';
+    worldCanvas.width = worldW;
+    worldCanvas.height = worldH;
+
+    stopPositions = computeStopPositions();
+    drawWorld();
+    placeStopLabels();
+
+    maxPanX = Math.max(0, worldW - viewportW / zoom);
+    maxPanY = Math.max(0, worldH - viewportH / zoom);
+    // Start near the first stop, vertically centred on the route.
+    panX = Math.max(0, Math.min(maxPanX, 0));
+    panY = Math.max(0, Math.min(maxPanY, worldH / 2 - viewportH / (2 * zoom)));
+    renderPan();
+  }
+
+  window.addEventListener('resize', updateBounds);
+
+  // Zoom inputs: buttons (the accessible default, works whatever position
+  // someone is in), keyboard +/-, and the mouse wheel.
+  zoomInBtn.addEventListener('click', () => setZoom(zoom + ZOOM_STEP));
+  zoomOutBtn.addEventListener('click', () => setZoom(zoom - ZOOM_STEP));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); setZoom(zoom + ZOOM_STEP); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); setZoom(zoom - ZOOM_STEP); }
+  });
+  worldWrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+    setZoom(zoom + delta);
+  }, { passive: false });
+
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (worldW && worldH) drawWorld();
+    });
+  }
+
+  async function loadModel() {
+    try {
+      const { FaceLandmarker, FilesetResolver } = await import(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest"
+      );
+      const vision = await FilesetResolver.forVisionTasks(
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+      );
+      faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+          delegate: "GPU",
+        },
+        runningMode: "VIDEO",
+        numFaces: 1,
+        outputFaceBlendshapes: false,
+        outputFacialTransformationMatrixes: false,
+      });
+      return true;
+    } catch (err) {
+      console.error('MediaPipe load failed', err);
+      return false;
+    }
+  }
+
+
+  // Un cadre (iframe) ne transmet la caméra ou le micro que si la page qui
+  // l'intègre le déclare explicitement (attribut allow). Sans cette
+  // délégation, getUserMedia échoue immédiatement, sans même afficher la
+  // demande d'autorisation : inutile alors de conseiller d'autoriser le
+  // périphérique, il n'y a rien à autoriser.
+  function dansUnCadre() {
+    return window.self !== window.top;
+  }
+  // featurePolicy ne répond pas de façon fiable dans tous les contextes : on
+  // ne s'en sert que pour prévenir en amont quand il dit non de façon nette.
+  function delegationRefusee(peripherique) {
+    if (!dansUnCadre()) return false;
+    try {
+      if (document.featurePolicy && document.featurePolicy.allowsFeature) {
+        return !document.featurePolicy.allowsFeature(peripherique);
+      }
+    } catch (e) {}
+    return false;
+  }
+  var MESSAGE_CADRE_CAMERA = "Cette page est ouverte dans un cadre qui ne transmet pas la caméra : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que la caméra fonctionne.";
+  var MESSAGE_CADRE_MICRO = "Cette page est ouverte dans un cadre qui ne transmet pas le micro : le navigateur refuse sans proposer d'autorisation. Téléchargez le dossier des démos et ouvrez ce fichier directement, ou servez-le en local, pour que le micro fonctionne.";
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false });
+      video.srcObject = stream;
+      await video.play();
+      return true;
+    } catch (err) {
+      console.error('camera error', err);
+      return false;
+    }
+  }
+
+  function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function computeYawPitch(lm) {
+    const nose = lm[1];
+    const cheekL = lm[234];
+    const cheekR = lm[454];
+    const top = lm[10];
+    const chin = lm[152];
+    const midX = (cheekL.x + cheekR.x) / 2;
+    const faceWidth = Math.max(0.02, Math.hypot(cheekL.x - cheekR.x, cheekL.y - cheekR.y));
+    // Landmarks follow the subject's own left/right, and the preview is
+    // mirrored, so a negative yaw is a turn to the viewer's own right,
+    // which is also what they see turn right on screen.
+    const yaw = (nose.x - midX) / faceWidth;
+    const faceHeight = Math.max(0.02, chin.y - top.y);
+    // ~0.5 at rest; smaller when tilting the head back (looking up),
+    // larger when tilting it forward (looking down).
+    const pitch = (nose.y - top.y) / faceHeight;
+    return { yaw, pitch };
+  }
+
+  // ---- Calibration: a few frames looking straight ahead set the neutral
+  // baseline, since resting yaw/pitch vary with camera angle and face shape.
+  const CALIB_TARGET = 20;
+  let calibFrames = 0;
+  let calibYawSum = 0, calibPitchSum = 0;
+  let baseYaw = 0, basePitch = 0;
+  let calibrated = false;
+
+  function resetCalibration() {
+    calibrated = false;
+    calibFrames = 0;
+    calibYawSum = 0;
+    calibPitchSum = 0;
+    recalibBtn.hidden = true;
+  }
+  recalibBtn.addEventListener('click', resetCalibration);
+
+  const DEAD_ZONE = 0.035;
+  const MAX_MAG = 0.17;
+  const MAX_SPEED = 24;
+
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!faceLandmarker || video.readyState < 2) return;
+    if (video.currentTime === lastVideoTime) return;
+    lastVideoTime = video.currentTime;
+
+    const result = faceLandmarker.detectForVideo(video, performance.now());
+    overlay.width = camPreview.clientWidth;
+    overlay.height = camPreview.clientHeight;
+    octx.clearRect(0, 0, overlay.width, overlay.height);
+
+    const hasFace = result.faceLandmarks && result.faceLandmarks.length > 0;
+    if (!hasFace) {
+      statusEl.textContent = 'aucun visage détecté';
+      return;
+    }
+
+    const lm = result.faceLandmarks[0];
+    const nose = lm[1], cheekL = lm[234], cheekR = lm[454];
+    [nose, cheekL, cheekR].forEach((p) => {
+      octx.beginPath();
+      octx.arc(p.x * overlay.width, p.y * overlay.height, 3.5, 0, Math.PI * 2);
+      octx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#161616';
+      octx.fill();
+    });
+
+    const { yaw, pitch } = computeYawPitch(lm);
+
+    if (!calibrated) {
+      calibYawSum += yaw;
+      calibPitchSum += pitch;
+      calibFrames++;
+      statusEl.textContent = 'calibration ' + calibFrames + '/' + CALIB_TARGET + ' : regardez l’écran bien en face';
+      if (calibFrames >= CALIB_TARGET) {
+        baseYaw = calibYawSum / calibFrames;
+        basePitch = calibPitchSum / calibFrames;
+        calibrated = true;
+        recalibBtn.hidden = false;
+      }
+      return;
+    }
+
+    const dy = yaw - baseYaw;
+    const dp = pitch - basePitch;
+
+    // Eased rather than linear: even a modest turn already moves briskly,
+    // instead of needing a big turn just to get going.
+    const magX = Math.pow(clamp01((Math.abs(dy) - DEAD_ZONE) / (MAX_MAG - DEAD_ZONE)), 0.6);
+    const speedX = (dy < 0 ? 1 : -1) * magX * MAX_SPEED;
+    const magY = Math.pow(clamp01((Math.abs(dp) - DEAD_ZONE) / (MAX_MAG - DEAD_ZONE)), 0.6);
+    const speedY = (dp < 0 ? -1 : 1) * magY * MAX_SPEED;
+
+    panX = clamp(panX + speedX, 0, maxPanX);
+    panY = clamp(panY + speedY, 0, maxPanY);
+    renderPan();
+
+    const hLabel = Math.abs(speedX) > 0.1 ? (speedX > 0 ? 'avance' : 'recule') : null;
+    const vLabel = Math.abs(speedY) > 0.1 ? (speedY > 0 ? 'descend' : 'monte') : null;
+    const parts = [hLabel, vLabel].filter(Boolean);
+    statusEl.innerHTML = parts.length
+      ? parts.map((p) => '<span class="dir">' + p + '</span>').join(' · ')
+      : 'centre';
+  }
+
+  async function boot() {
+    buildWorld();
+    if (!('mediaDevices' in navigator)) {
+      startNote.textContent = "Ce navigateur ne propose pas l'accès caméra. Ouvrez cette page dans Chrome ou Arc, en local, avec la caméra autorisée.";
+      return;
+    }
+    const modelOk = await loadModel();
+    if (!modelOk) {
+      startNote.textContent = "Le modèle de suivi de visage n'a pas pu se charger (connexion internet nécessaire au premier chargement). Réessayez, ou ouvrez cette page en local dans Chrome/Arc.";
+      return;
+    }
+    startBtn.disabled = false;
+    startNote.textContent = delegationRefusee("camera")
+      ? MESSAGE_CADRE_CAMERA
+      : "Modèle chargé. Cliquez pour autoriser la caméra et commencer.";
+
+    startBtn.addEventListener('click', async () => {
+      startBtn.disabled = true;
+      startNote.textContent = "Demande d'accès à la caméra…";
+      const ok = await startCamera();
+      if (!ok) {
+        startNote.textContent = dansUnCadre()
+          ? MESSAGE_CADRE_CAMERA
+          : "Caméra refusée ou indisponible. Autorisez-la dans les réglages du site puis rechargez la page.";
+        startBtn.disabled = false;
+        return;
+      }
+      startLayer.remove();
+      camPreview.hidden = false;
+      updateBounds();
+      loop();
+    });
+  }
+
+  boot();
+</script>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page plein écran présentant une grande carte qu'on explore uniquement avec les mouvements de tête, captés par la webcam.
+
+Utilise MediaPipe Tasks Vision (FaceLandmarker, le modèle de suivi de visage de Google) pour déduire l'orientation de la tête à partir de la position du nez par rapport aux joues, au front et au menton. Regarder à droite fait avancer, à gauche reculer, en haut ou en bas déplace verticalement. Commence par une courte calibration face à l'écran pour définir la position neutre, et prévois une zone morte autour du centre pour que la carte reste immobile au repos.
+
+Déplace la carte par une transformation CSS sur un calque plus grand que la fenêtre, avec un fond texturé pour que le mouvement reste lisible. Ajoute un zoom par boutons, touches clavier et molette, plutôt qu'un geste supplémentaire qui entrerait en concurrence avec le pilotage à la tête.</pre>
+</div>
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) {
+    panel.hidden = !open;
+    tab.setAttribute('aria-expanded', String(open));
+  }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    cb();
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    var done = function () {
+      copyBtn.textContent = 'Copié';
+      setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(function () { fallbackCopy(text, done); });
+    } else {
+      fallbackCopy(text, done);
+    }
+  });
+})();
+</script>
+</body>
+</html>
