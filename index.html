@@ -56,7 +56,6 @@
        between the panels while they are still at full scale. */
     margin: -0.5px;
   }
-  .wipe span:nth-child(even) { transform-origin: center bottom; }
 
   #stage {
     position: fixed;
@@ -177,19 +176,6 @@
     white-space: nowrap;
   }
 
-  .note {
-    grid-column: 1;
-    grid-row: 3;
-    align-self: end;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 450;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin: 0;
-  }
-
   /* The prompt pill, shown while the pointer is over the hero and trailing it
      at the same lag as the cursor so the two read as one object. */
   .pill {
@@ -259,11 +245,24 @@
   }
 
   @media (max-width: 860px) {
-    .overlay { display: block; padding: 24px; }
+    /* Back into the normal flow: fixed positioning pinned the list off-screen
+       and left the page looking unscrollable. */
+    .overlay {
+      position: relative;
+      inset: auto;
+      display: block;
+      padding: 24px 24px 64px;
+      z-index: 4;
+    }
     h1 { white-space: normal; font-size: clamp(28px, 8vw, 40px); }
     .intro { max-width: none; }
-    .index { width: 100%; margin-top: 52vh; }
-    .note { margin-top: 26px; }
+    .index { width: 100%; margin-top: 58vh; }
+    /* A full-screen button has nothing to offer without hover, and sitting
+       fixed above the flow it swallowed both the links and the scroll. */
+    .hotspot { display: none; }
+    /* The wipe needs a scroll corridor the page no longer has room for, so
+       the panels stay put and simply act as the white ground. */
+    #corridor { display: none; }
     .wipe { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
   }
 
@@ -301,8 +300,6 @@
     <h1>Sept démos d'interfaces.</h1>
     <p class="tagline">Contrôle vocal, gestuel, captation du regard, 3D au scroll et animation. Sept pages autonomes, sans installation ni compilation.</p>
   </div>
-
-  <p class="note">À ouvrir sur ordinateur</p>
 
   <nav class="index" aria-label="Les sept démos">
     <h2>Démos</h2>
@@ -847,33 +844,60 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
   if (window.gsap && window.ScrollTrigger) {
     gsap.registerPlugin(ScrollTrigger);
-    const theme = { t: 0 };
 
-    // No pin: every visual is position:fixed already, so the corridor alone
-    // gives the timeline something to scrub against. That sidesteps the
-    // pin-spacing and layout-shift pitfalls entirely.
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: '#corridor',
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 1
-      }
-    });
+    // The transition belongs to the wide layout only. On a phone the page is
+    // a plain scrolling document with no corridor to scrub against, and a
+    // corridor of zero height would send the timeline straight to the end,
+    // leaving the panels half retracted over the list. matchMedia builds the
+    // timeline inside the breakpoint and reverts it on the way out.
+    const mm = gsap.matchMedia();
 
-    tl.to('.intro, .note', { opacity: 0, y: -24, duration: 0.35 }, 0)
+    mm.add('(min-width: 861px)', function () {
+      const theme = { t: 0 };
+
+      // No pin: every visual is position:fixed already, so the corridor alone
+      // gives the timeline something to scrub against. That sidesteps the
+      // pin-spacing and layout-shift pitfalls entirely.
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#corridor',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: 1
+        }
+      });
+
+      // Read the column count back from the CSS rather than hardcoding it, so
+      // the staircase still walks the grid when the breakpoint changes it.
+      const wipeEl = document.querySelector('.wipe');
+      const cols = getComputedStyle(wipeEl).gridTemplateColumns.split(' ').filter(Boolean).length || 6;
+      const rows = Math.ceil(wipeEl.children.length / cols);
+
+      tl.to('.intro', { opacity: 0, y: -24, duration: 0.35 }, 0)
       .to('.wipe span', {
         scaleY: 0,
         duration: 0.6,
-        // Staggering from a random panel is what makes it read as a wipe
-        // rather than a blind coming down in one piece.
-        stagger: { each: 0.035, from: 'random' }
+        // Every panel collapses towards its top edge, so the black is
+        // uncovered from the bottom up. The delay climbs with the column and
+        // with the distance from the bottom row, which is what turns a flat
+        // wipe into a staircase running up and to the right.
+        stagger: function (i) {
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+          return col * 0.075 + (rows - 1 - row) * 0.055;
+        }
       }, 0.05)
       .to(theme, {
         t: 1,
         duration: 0.5,
         onUpdate: function () { applyTheme(theme.t); }
       }, 0.15);
+
+      // Leaving the breakpoint: matchMedia reverts the tweens it owns, but the
+      // ink variables were written straight onto the root, so they are put
+      // back by hand.
+      return function () { applyTheme(0); };
+    });
   }
 
   /* ------------------------------------------------------------------ */
