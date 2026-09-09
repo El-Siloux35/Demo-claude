@@ -201,17 +201,46 @@
   .pill[data-show="1"] { opacity: 1; }
   .pill[data-copied="1"] { background: #1d7a4c; }
 
+  /* Sits between the columns and the section that follows: revealed by the
+     black they leave, and scrolled over by the content to come. */
+  .reveal {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    /* Flex, not grid: as grid items the letters would each take a row and the
+       line would read downwards. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    margin: 0;
+    color: #f2f2f2;
+    font-size: clamp(28px, 5vw, 64px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  /* Each letter is its own inline-block so it can be moved on its own;
+     inline elements ignore transforms. */
+  .reveal span {
+    display: inline-block;
+    white-space: pre;
+    will-change: transform, opacity;
+  }
+
   /* --- Below the fold ------------------------------------------------ */
 
   /* The scroll corridor. Nothing is drawn here: it exists to give the
      timeline something to scrub against, which is why no pin is needed. */
-  #corridor { height: 220vh; }
+  /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
+     the finished line stays on screen instead of being covered by the next
+     section the instant it lands. */
+  #corridor { height: 300vh; }
 
   /* Above the columns, so the section that follows scrolls over the black
      they leave behind rather than under it. */
   #next {
     position: relative;
-    z-index: 5;
+    z-index: 6;
     min-height: 100vh;
     background: var(--dark);
     color: #f2f2f2;
@@ -262,8 +291,9 @@
     /* A full-screen button has nothing to offer without hover, and sitting
        fixed above the flow it would swallow both the links and the scroll. */
     .hotspot { display: none; }
-    /* The columns need a scroll corridor the page no longer has room for. */
-    .wipe, #corridor { display: none; }
+    /* The columns need a scroll corridor the page no longer has room for,
+       and the line they uncover goes with them. */
+    .wipe, #corridor, .reveal { display: none; }
   }
 
   @media (hover: none), (pointer: coarse) {
@@ -314,6 +344,8 @@
 <div class="wipe" aria-hidden="true">
   <span></span><span></span><span></span><span></span><span></span><span></span>
 </div>
+
+<p class="reveal" id="reveal">C'est cool quand même</p>
 
 <div class="cursor" id="cursor" aria-hidden="true"></div>
 
@@ -422,7 +454,8 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
   /* ------------------------------------------------------------------ */
   const canvas = document.getElementById('stage');
   let renderer = null, scene = null, camera = null, pivot = null;
-  let objectRadius = 1, ready = false;
+  let particleMaterial = null, objectRadius = 1, ready = false;
+  const clock = window.THREE ? new THREE.Clock() : null;
 
   if (window.THREE && window.THREE.GLTFLoader) {
     try {
@@ -474,6 +507,215 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
     pivot = new THREE.Group();
     scene.add(pivot);
+
+    /* ----------------------------------------------------------------
+       Particles.
+
+       Curl noise is the standard way to get drifting, filament-like dust:
+       sample a 3D noise field three times to build a vector field, then take
+       its curl, which is divergence-free. Divergence-free means the flow
+       never piles particles into blobs or drains a region, which is why the
+       cloud keeps its structure instead of collapsing.
+
+       Large demos push this through an FBO simulation pass to reach a million
+       particles. At this count the displacement fits directly in the vertex
+       shader, with no ping-pong render targets.
+       ---------------------------------------------------------------- */
+    const PARTICLE_COUNT = 26000;
+
+    const noiseGLSL = `
+      vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+      vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+      vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+      float snoise(vec3 v){
+        const vec2 C=vec2(1.0/6.0,1.0/3.0);
+        const vec4 D=vec4(0.0,0.5,1.0,2.0);
+        vec3 i=floor(v+dot(v,C.yyy));
+        vec3 x0=v-i+dot(i,C.xxx);
+        vec3 g=step(x0.yzx,x0.xyz);
+        vec3 l=1.0-g;
+        vec3 i1=min(g.xyz,l.zxy);
+        vec3 i2=max(g.xyz,l.zxy);
+        vec3 x1=x0-i1+C.xxx;
+        vec3 x2=x0-i2+C.yyy;
+        vec3 x3=x0-D.yyy;
+        i=mod289(i);
+        vec4 p=permute(permute(permute(
+                i.z+vec4(0.0,i1.z,i2.z,1.0))
+              + i.y+vec4(0.0,i1.y,i2.y,1.0))
+              + i.x+vec4(0.0,i1.x,i2.x,1.0));
+        float n_=0.142857142857;
+        vec3 ns=n_*D.wyz-D.xzx;
+        vec4 j=p-49.0*floor(p*ns.z*ns.z);
+        vec4 x_=floor(j*ns.z);
+        vec4 y_=floor(j-7.0*x_);
+        vec4 x=x_*ns.x+ns.yyyy;
+        vec4 y=y_*ns.x+ns.yyyy;
+        vec4 h=1.0-abs(x)-abs(y);
+        vec4 b0=vec4(x.xy,y.xy);
+        vec4 b1=vec4(x.zw,y.zw);
+        vec4 s0=floor(b0)*2.0+1.0;
+        vec4 s1=floor(b1)*2.0+1.0;
+        vec4 sh=-step(h,vec4(0.0));
+        vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;
+        vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+        vec3 p0=vec3(a0.xy,h.x);
+        vec3 p1=vec3(a0.zw,h.y);
+        vec3 p2=vec3(a1.xy,h.z);
+        vec3 p3=vec3(a1.zw,h.w);
+        vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+        p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+        vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);
+        m=m*m;
+        return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+      }
+      vec3 snoiseVec3(vec3 x){
+        return vec3(
+          snoise(x),
+          snoise(vec3(x.y-19.1,x.z+33.4,x.x+47.2)),
+          snoise(vec3(x.z+74.2,x.x-124.5,x.y+99.4))
+        );
+      }
+      vec3 curlNoise(vec3 p){
+        const float e=0.12;
+        vec3 dx=vec3(e,0.0,0.0), dy=vec3(0.0,e,0.0), dz=vec3(0.0,0.0,e);
+        vec3 px0=snoiseVec3(p-dx), px1=snoiseVec3(p+dx);
+        vec3 py0=snoiseVec3(p-dy), py1=snoiseVec3(p+dy);
+        vec3 pz0=snoiseVec3(p-dz), pz1=snoiseVec3(p+dz);
+        float x=py1.z-py0.z-pz1.y+pz0.y;
+        float y=pz1.x-pz0.x-px1.z+px0.z;
+        float z=px1.y-px0.y-py1.x+py0.x;
+        return normalize(vec3(x,y,z)/(2.0*e));
+      }
+    `;
+
+    particleMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime:   { value: 0 },
+        uSize:   { value: 1.5 },
+        uRatio:  { value: pixelRatio },
+        uAmp:    { value: 1 },
+        uMotion: { value: reduced ? 0 : 1 },
+        uColor:  { value: new THREE.Color(0x111111) }
+      },
+      vertexShader: noiseGLSL + `
+        attribute float aScale;
+        attribute float aAlpha;
+        attribute float aSeed;
+        uniform float uTime, uSize, uRatio, uAmp, uMotion;
+        varying float vAlpha;
+        void main(){
+          vec3 p = position;
+          // A frozen slice of the field still reads as a cloud, so reduced
+          // motion keeps the look and drops only the movement.
+          float t = uTime * 0.05 * uMotion;
+          vec3 flow = curlNoise(p * 0.26 + vec3(0.0, t, t * 0.6) + aSeed * 4.3);
+          p += flow * uAmp * (0.55 + aSeed * 0.9);
+          float a = uTime * 0.018 * uMotion;
+          float s = sin(a), c = cos(a);
+          p = vec3(p.x * c - p.z * s, p.y, p.x * s + p.z * c);
+          vec4 mv = modelViewMatrix * vec4(p, 1.0);
+          gl_Position = projectionMatrix * mv;
+          gl_PointSize = uSize * aScale * uRatio * (320.0 / max(0.001, -mv.z));
+          vAlpha = aAlpha;
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        uniform vec3 uColor;
+        varying float vAlpha;
+        void main(){
+          // Round the square point sprite off, or the dust reads as pixels.
+          float d = length(gl_PointCoord - 0.5);
+          float mask = smoothstep(0.5, 0.12, d);
+          if (mask <= 0.01) discard;
+          gl_FragColor = vec4(uColor, vAlpha * mask);
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.NormalBlending
+    });
+
+    function buildParticles(radius) {
+      const positions = new Float32Array(PARTICLE_COUNT * 3);
+      const scales = new Float32Array(PARTICLE_COUNT);
+      const alphas = new Float32Array(PARTICLE_COUNT);
+      const seeds = new Float32Array(PARTICLE_COUNT);
+
+      // A uniform scatter reads as noise, not as a cloud. Seeding a few
+      // hundred centres and clustering most of the dust around them produces
+      // the clumps and voids that make it look like matter.
+      const CLUSTERS = 420;
+      const centres = [];
+      for (let c = 0; c < CLUSTERS; c++) {
+        const u = Math.random() * 2 - 1;
+        const theta = Math.random() * Math.PI * 2;
+        const su = Math.sqrt(1 - u * u);
+        let y = u;
+        const disc = Math.random() < 0.4;
+        if (disc) y *= 0.22;
+        const shell = 1.45 + Math.pow(Math.random(), 0.7) * 0.9;
+        const r = radius * (disc ? shell * 1.2 : shell);
+        centres.push([su * Math.cos(theta) * r, y * r, su * Math.sin(theta) * r]);
+      }
+
+      // Box-Muller: a gaussian offset gives each clump a soft falloff instead
+      // of a hard-edged ball of points.
+      function gauss() {
+        let a = 0, b = 0;
+        while (a === 0) a = Math.random();
+        while (b === 0) b = Math.random();
+        return Math.sqrt(-2 * Math.log(a)) * Math.cos(2 * Math.PI * b);
+      }
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        let x, y, z;
+        // A quarter stays diffuse so the clumps sit in a haze, not a vacuum.
+        if (Math.random() < 0.26) {
+          const u = Math.random() * 2 - 1;
+          const theta = Math.random() * Math.PI * 2;
+          const su = Math.sqrt(1 - u * u);
+          const r = radius * (1.35 + Math.pow(Math.random(), 1.6) * 2.0);
+          x = su * Math.cos(theta) * r;
+          y = u * r * 0.75;
+          z = su * Math.sin(theta) * r;
+        } else {
+          const c = centres[(Math.random() * CLUSTERS) | 0];
+          const spread = radius * (0.06 + Math.random() * 0.2);
+          x = c[0] + gauss() * spread;
+          y = c[1] + gauss() * spread;
+          z = c[2] + gauss() * spread;
+        }
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        // Dust thins out with distance, so the cloud has a soft edge and
+        // stops competing with the text in the corners.
+        const dist = Math.sqrt(x * x + y * y + z * z) / radius;
+        const falloff = Math.max(0.1, 1 - Math.max(0, dist - 1.9) * 0.5);
+
+        scales[i] = 0.5 + Math.pow(Math.random(), 2.0) * 1.9;
+        alphas[i] = (0.24 + Math.random() * 0.6) * falloff;
+        seeds[i] = Math.random();
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
+      geo.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1));
+      geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+
+      particleMaterial.uniforms.uAmp.value = radius * 0.72;
+      particleMaterial.uniforms.uSize.value = radius * 0.021;
+
+      const points = new THREE.Points(geo, particleMaterial);
+      points.frustumCulled = false;
+      pivot.add(points);
+    }
 
     function frameObject() {
       const vFov = camera.fov * Math.PI / 180;
@@ -566,6 +808,8 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         pivot.position.set(0, objectRadius * 0.22, 0);
         pivot.updateMatrixWorld(true);
 
+        buildParticles(objectRadius);
+
         ready = true;
         frameObject();
         resize();
@@ -586,24 +830,55 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     // with no corridor to scrub against, and a corridor of zero height would
     // send the timeline straight to its end. matchMedia builds the tween
     // inside the breakpoint and reverts it on the way out.
+    // Split the line into one element per character. GSAP ships SplitText for
+    // this, but a line this short does not justify loading a plugin: the same
+    // result is a few lines of DOM, and the original text stays in the HTML
+    // for anyone reading the source or listening to it.
+    const revealEl = document.getElementById('reveal');
+    const letters = [].map.call(revealEl.textContent, function (ch) {
+      const span = document.createElement('span');
+      span.textContent = ch;
+      return span;
+    });
+    // The line keeps its text for assistive technology, which would otherwise
+    // read twenty-one separate characters.
+    revealEl.setAttribute('aria-label', revealEl.textContent);
+    revealEl.textContent = '';
+    letters.forEach(function (span) {
+      span.setAttribute('aria-hidden', 'true');
+      revealEl.appendChild(span);
+    });
+
     gsap.matchMedia().add('(min-width: 861px)', function () {
       // No pin: every visual is position:fixed already, so the corridor alone
-      // gives the tween something to scrub against. That sidesteps the
+      // gives the timeline something to scrub against. That sidesteps the
       // pin-spacing and layout-shift pitfalls entirely.
-      gsap.to('.wipe span', {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '#corridor',
+          start: 'top top',
+          end: '+=200%',
+          scrub: 1
+        }
+      });
+
+      tl.to('.wipe span', {
         scaleY: 1,
         ease: 'none',
         // Each column grows from the bottom and starts later than the one to
         // its left, so their top edges form a staircase climbing across the
         // screen. At the end they meet and the page is solid black.
-        stagger: 0.09,
-        scrollTrigger: {
-          trigger: '#corridor',
-          start: 'top top',
-          end: 'bottom bottom',
-          scrub: 1
-        }
-      });
+        stagger: 0.09
+      }, 0)
+        // The line arrives once the black is laid down, letter by letter from
+        // below, as if the columns had pushed it up with them.
+        .from(letters, {
+          yPercent: 120,
+          opacity: 0,
+          duration: 0.5,
+          ease: 'power3.out',
+          stagger: 0.035
+        }, 0.62);
     });
   }
 
@@ -624,6 +899,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     }
 
     if (!ready) return;
+    particleMaterial.uniforms.uTime.value = clock.getElapsedTime();
     currentX += (targetX - currentX) * 0.055;
     currentY += (targetY - currentY) * 0.055;
     pivot.rotation.x = currentX;
