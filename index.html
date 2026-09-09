@@ -9,11 +9,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;450&family=Inter+Tight:wght@400;500&display=swap">
 <style>
   :root {
+    --ground: #ffffff;
     --ink: #0d0d0d;
     --ink-dim: #6b6b6b;
     --rule: #dedede;
-    --rule-strong: #0d0d0d;
-    --panel: #ffffff;
     --dark: #050505;
     /* Neue Haas Grotesk Display is a licensed Monotype face and cannot be
        served from here. It leads the stack so a machine that has it uses it;
@@ -25,35 +24,14 @@
 
   body {
     margin: 0;
-    /* Black sits under everything. The white the visitor sees at rest is the
-       panel layer, and the transition is that layer retracting. */
-    background: var(--dark);
+    background: var(--ground);
     color: var(--ink);
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Layer order matters and is the whole trick: the panels sit BEHIND the
-     canvas, so the 3D reads against white at rest and against black once they
-     have gone, without ever being covered. */
-  .wipe {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: 1fr;
-    pointer-events: none;
-  }
-  .wipe span {
-    background: var(--panel);
-    transform-origin: center top;
-    will-change: transform;
-    /* Hairline overlap: without it, subpixel rounding leaves dark seams
-       between the panels while they are still at full scale. */
-    margin: -0.5px;
-  }
+  /* --- The hero, in layer order ------------------------------------- */
 
   #stage {
     position: fixed;
@@ -61,18 +39,18 @@
     width: 100%;
     height: 100%;
     display: block;
-    z-index: 2;
+    z-index: 1;
   }
 
-  /* The hover zone that offers the prompt. It sits under the overlay, so the
-     menu inside the overlay keeps its own clicks. */
+  /* The hover zone offering the prompt. Below the overlay, so the menu keeps
+     its own clicks; above nothing else, so the rest of the hero is one target. */
   .hotspot {
     position: fixed;
     inset: 0;
-    z-index: 3;
+    z-index: 2;
     cursor: pointer;
     /* A bare <button> carries the platform's own grey fill and border, which
-       here covered the whole canvas. Reset it to a pure hit area. */
+       would cover the canvas. Reset it to a pure hit area. */
     appearance: none;
     -webkit-appearance: none;
     background: transparent;
@@ -82,24 +60,49 @@
     font: inherit;
     color: inherit;
   }
-  .hotspot:focus-visible {
-    outline: 2px solid var(--ink);
-    outline-offset: -6px;
-  }
+  .hotspot:focus-visible { outline: 2px solid var(--ink); outline-offset: -6px; }
 
   .overlay {
     position: fixed;
     inset: 0;
-    z-index: 4;
+    z-index: 3;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto 1fr auto;
     padding: clamp(22px, 3.4vw, 52px);
-    gap: 24px;
     /* Transparent to the pointer, so hovering the copy zone and steering the
        3D both keep working straight through the text. */
     pointer-events: none;
   }
+
+  /* --- The transition ----------------------------------------------- */
+
+  /* Solid black columns that rise over the finished page. They sit ABOVE the
+     hero, so nothing needs fading out: the content is covered, not dimmed. */
+  .wipe {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    pointer-events: none;
+  }
+  .wipe span {
+    background: var(--dark);
+    transform-origin: center bottom;
+    transform: scaleY(0);
+    will-change: transform;
+    /* Each column blocks the pointer only over the part it has actually
+       covered, because a transform shrinks the hit area with the paint. The
+       copy zone underneath therefore stops responding exactly as it
+       disappears, with no rule to keep in step. */
+    pointer-events: auto;
+    /* Hairline overlap, or subpixel rounding leaves white seams between the
+       columns once they meet. */
+    margin: 0 -0.5px;
+  }
+
+  /* --- Copy ---------------------------------------------------------- */
 
   .intro { grid-column: 1; grid-row: 1; max-width: 36rem; }
 
@@ -139,16 +142,13 @@
     width: min(30rem, 100%);
     pointer-events: auto;
   }
-
   .index h2 {
     font-size: 21px;
     font-weight: 500;
     letter-spacing: -0.015em;
     margin: 0 0 14px;
   }
-
   .index ul { list-style: none; margin: 0; padding: 0; }
-
   .index a {
     display: flex;
     align-items: baseline;
@@ -162,8 +162,8 @@
     transition-duration: 200ms;
   }
   .index li:last-child a { border-bottom: 1px solid var(--rule); }
-  .index a:hover { border-top-color: var(--rule-strong); padding-inline-start: 10px; }
-  .index li:last-child a:hover { border-bottom-color: var(--rule-strong); }
+  .index a:hover { border-top-color: var(--ink); padding-inline-start: 10px; }
+  .index li:last-child a:hover { border-bottom-color: var(--ink); }
   .index .name { font-size: 16px; }
   .index .meta {
     font-family: var(--font-mono);
@@ -174,13 +174,12 @@
     white-space: nowrap;
   }
 
-  /* The prompt pill, shown while the pointer is over the hero and trailing it
-     at the same lag as the cursor so the two read as one object. */
+  /* The prompt pill lives inside the hover zone, so it inherits its
+     visibility and its position in the stack with no rules of its own. */
   .pill {
     position: fixed;
     top: 0;
     left: 0;
-    z-index: 7;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -196,41 +195,25 @@
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
-    transform: translate3d(-100px, -100px, 0) scale(0.9);
-    transition: opacity 220ms ease, scale 220ms ease;
+    transform: translate3d(-200px, -200px, 0);
+    transition: opacity 220ms ease;
   }
   .pill[data-show="1"] { opacity: 1; }
   .pill[data-copied="1"] { background: #1d7a4c; }
 
-  /* The lagging cursor. Difference blending means one element reads correctly
-     on the white panels and on the black underneath, with nothing to switch. */
-  .cursor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 13px;
-    height: 13px;
-    margin: -6.5px 0 0 -6.5px;
-    border-radius: 50%;
-    background: #ffffff;
-    mix-blend-mode: difference;
-    pointer-events: none;
-    z-index: 8;
-    will-change: transform;
-  }
+  /* --- Below the fold ------------------------------------------------ */
 
   /* The scroll corridor. Nothing is drawn here: it exists to give the
      timeline something to scrub against, which is why no pin is needed. */
-  #corridor { height: 260vh; position: relative; z-index: 0; }
+  #corridor { height: 220vh; }
 
+  /* Above the columns, so the section that follows scrolls over the black
+     they leave behind rather than under it. */
   #next {
     position: relative;
     z-index: 5;
     min-height: 100vh;
-    /* Transparent rather than black: the page body is already black and the
-       dust canvas sits behind, so the snow keeps falling under the content
-       instead of being covered by a second black rectangle. */
-    background: transparent;
+    background: var(--dark);
     color: #f2f2f2;
     padding: clamp(22px, 3.4vw, 52px);
     display: flex;
@@ -245,6 +228,24 @@
     color: #6b6b6b;
   }
 
+  /* The lagging cursor, on top of everything. Difference blending means one
+     element reads correctly on the white page and on the black columns, with
+     nothing to switch. */
+  .cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 13px;
+    height: 13px;
+    margin: -6.5px 0 0 -6.5px;
+    border-radius: 50%;
+    background: #ffffff;
+    mix-blend-mode: difference;
+    pointer-events: none;
+    z-index: 6;
+    will-change: transform;
+  }
+
   @media (max-width: 860px) {
     /* Back into the normal flow: fixed positioning pinned the list off-screen
        and left the page looking unscrollable. */
@@ -253,25 +254,20 @@
       inset: auto;
       display: block;
       padding: 24px 24px 64px;
-      z-index: 4;
+      z-index: 3;
     }
     h1 { white-space: normal; font-size: clamp(28px, 8vw, 40px); }
     .intro { max-width: none; }
     .index { width: 100%; margin-top: 58vh; }
     /* A full-screen button has nothing to offer without hover, and sitting
-       fixed above the flow it swallowed both the links and the scroll. */
+       fixed above the flow it would swallow both the links and the scroll. */
     .hotspot { display: none; }
-    /* The wipe needs a scroll corridor the page no longer has room for, so
-       the panels stay put and simply act as the white ground. */
-    #corridor { display: none; }
-    .wipe { grid-template-columns: repeat(3, 1fr); }
+    /* The columns need a scroll corridor the page no longer has room for. */
+    .wipe, #corridor { display: none; }
   }
 
-  /* Coarse pointers have no cursor to trail and no hover to reveal a pill, so
-     both are dropped rather than left as dead ornaments. */
   @media (hover: none), (pointer: coarse) {
-    .cursor, .pill { display: none; }
-    .hotspot { cursor: auto; }
+    .cursor { display: none; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -282,14 +278,10 @@
 </head>
 <body>
 
-<div class="wipe" aria-hidden="true">
-  <span></span><span></span><span></span><span></span><span></span><span></span>
-</div>
-
 <canvas id="stage" aria-hidden="true"></canvas>
 
-<!-- Hovering here offers the prompt behind the hero animation. It is a real
-     button so the keyboard reaches it too, not only the mouse. -->
+<!-- Hovering here offers the prompt behind the hero animation. A real button,
+     so the keyboard reaches it too. -->
 <button class="hotspot" id="hotspot" type="button"
         aria-label="Copier le prompt de l'animation d'accueil">
   <span class="pill" id="pill" aria-hidden="true">
@@ -319,6 +311,10 @@
   </nav>
 </div>
 
+<div class="wipe" aria-hidden="true">
+  <span></span><span></span><span></span><span></span><span></span><span></span>
+</div>
+
 <div class="cursor" id="cursor" aria-hidden="true"></div>
 
 <div id="corridor"></div>
@@ -328,16 +324,16 @@
 </section>
 
 <!-- The prompt handed to the visitor. Kept in the DOM rather than in a JS
-     string so it stays readable and translatable. -->
-<script type="text/plain" id="promptSource">Construis une page d'accueil HTML autonome, fond blanc, avec un objet 3D au centre et un nuage de particules autour.
+     string so it stays readable. -->
+<script type="text/plain" id="promptSource">Construis une page d'accueil HTML autonome, fond blanc, avec un objet 3D au centre.
 
 Charge un fichier .glb embarqué en base64 avec Three.js et son GLTFLoader, et conserve le matériau du modèle s'il en a un. Recentre l'objet sur un pivot, et cadre la caméra sur l'axe le plus contraint pour qu'il tienne aussi bien en fenêtre large qu'étroite.
 
 L'objet suit la souris : la position du pointeur définit un angle cible, et la boucle de rendu interpole vers cette cible plutôt que d'appliquer l'angle image par image, pour que le mouvement glisse.
 
-Pour les particules, utilise un THREE.Points déplacé par un bruit de curl dans le vertex shader : échantillonne un bruit simplex 3D trois fois pour construire un champ de vecteurs et prends-en le rotationnel. Comme ce champ est à divergence nulle, les particules ne s'agglutinent pas et ne laissent pas de vides, ce qui donne les filaments. Distribue-les en amas gaussiens autour de l'objet, avec un vide central pour ne pas salir sa surface.
+Au scroll, fais monter des colonnes noires opaques par-dessus la page avec GSAP ScrollTrigger en mode scrub. Chacune part du bas et démarre plus tard que sa voisine de gauche, de sorte que leur bord supérieur dessine un escalier qui traverse l'écran. Elles recouvrent le contenu au lieu de le faire disparaître en fondu, et l'écran finit entièrement noir.
 
-Au scroll, fais reculer des panneaux blancs en quinconce avec GSAP ScrollTrigger en mode scrub, pour révéler un fond noir derrière la scène, et fais basculer les couleurs du texte et des particules en même temps.
+Ajoute un curseur personnalisé qui rejoint le pointeur avec du retard, en mix-blend-mode difference pour rester lisible sur les deux fonds.
 
 Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible si WebGL échoue.</script>
 
@@ -351,23 +347,16 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
   const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
   /* ------------------------------------------------------------------ */
-  /* Lagging cursor                                                      */
-  /* ------------------------------------------------------------------ */
-  const cursorEl = document.getElementById('cursor');
-  const pillEl = document.getElementById('pill');
-  const pillLabel = document.getElementById('pillLabel');
-  let pointerX = window.innerWidth / 2, pointerY = window.innerHeight / 2;
-  let cursorX = pointerX, cursorY = pointerY;
-
-  /* ------------------------------------------------------------------ */
   /* Prompt copy                                                         */
   /* ------------------------------------------------------------------ */
   const hotspot = document.getElementById('hotspot');
+  const pillEl = document.getElementById('pill');
+  const pillLabel = document.getElementById('pillLabel');
   const promptText = document.getElementById('promptSource').textContent.trim();
   let copiedTimer = null;
 
   function fallbackCopy(text) {
-    // execCommand is deprecated but remains the only path on a page served
+    // execCommand is deprecated but remains the only path on a page opened
     // over file://, where the async clipboard API is unavailable.
     const ta = document.createElement('textarea');
     ta.value = text;
@@ -381,9 +370,9 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     return ok;
   }
 
-  function flash(label, good) {
+  function flash(label) {
     pillLabel.textContent = label;
-    pillEl.setAttribute('data-copied', good ? '1' : '0');
+    pillEl.setAttribute('data-copied', '1');
     clearTimeout(copiedTimer);
     copiedTimer = setTimeout(function () {
       pillLabel.textContent = 'Copier le prompt';
@@ -391,44 +380,51 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     }, 1800);
   }
 
-  function copyPrompt() {
+  hotspot.addEventListener('click', function () {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(promptText)
-        .then(function () { flash('Prompt copié', true); })
-        .catch(function () { flash(fallbackCopy(promptText) ? 'Prompt copié' : 'Copie refusée', true); });
+        .then(function () { flash('Prompt copié'); })
+        .catch(function () { flash(fallbackCopy(promptText) ? 'Prompt copié' : 'Copie refusée'); });
     } else {
-      flash(fallbackCopy(promptText) ? 'Prompt copié' : 'Copie refusée', true);
+      flash(fallbackCopy(promptText) ? 'Prompt copié' : 'Copie refusée');
     }
-  }
+  });
 
-  hotspot.addEventListener('click', copyPrompt);
   hotspot.addEventListener('pointerenter', function () {
     if (fine) pillEl.setAttribute('data-show', '1');
   });
   hotspot.addEventListener('pointerleave', function () {
     pillEl.setAttribute('data-show', '0');
   });
-  // Keyboard users get the pill parked in a fixed spot rather than at a
-  // pointer position that does not exist.
-  hotspot.addEventListener('focus', function () {
-    pointerX = window.innerWidth * 0.5;
-    pointerY = window.innerHeight * 0.5;
-    pillEl.setAttribute('data-show', '1');
-  });
-  hotspot.addEventListener('blur', function () { pillEl.setAttribute('data-show', '0'); });
+
+  /* ------------------------------------------------------------------ */
+  /* Pointer                                                             */
+  /* ------------------------------------------------------------------ */
+  const cursorEl = document.getElementById('cursor');
+  let pointerX = window.innerWidth / 2, pointerY = window.innerHeight / 2;
+  let cursorX = pointerX, cursorY = pointerY;
+
+  // Resting angle, and how far the pointer is allowed to pull the model away
+  // from it.
+  const REST_X = -0.04, REST_Y = 0;
+  let targetX = REST_X, targetY = REST_Y;
+  let currentX = REST_X, currentY = REST_Y;
+
+  window.addEventListener('pointermove', function (e) {
+    pointerX = e.clientX;
+    pointerY = e.clientY;
+    targetY = REST_Y + ((e.clientX / window.innerWidth) * 2 - 1) * 0.5;
+    targetX = REST_X + ((e.clientY / window.innerHeight) * 2 - 1) * 0.3;
+  }, { passive: true });
 
   /* ------------------------------------------------------------------ */
   /* Scene                                                               */
   /* ------------------------------------------------------------------ */
   const canvas = document.getElementById('stage');
-  // The copy, the list and the transition are plain HTML and CSS, so a failed
-  // WebGL init costs the decoration and nothing else.
-  const hasThree = !!(window.THREE && window.THREE.GLTFLoader);
-
   let renderer = null, scene = null, camera = null, pivot = null;
-  let particleMaterial = null, objectRadius = 1, ready = false;
+  let objectRadius = 1, ready = false;
 
-  if (hasThree) {
+  if (window.THREE && window.THREE.GLTFLoader) {
     try {
       renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
     } catch (e) { renderer = null; }
@@ -440,15 +436,15 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     scene = new THREE.Scene();
     renderer.setClearColor(0x000000, 0);
     // Without tone mapping a light face under these lights clips to pure
-    // white and disappears into the panel behind it.
+    // white and disappears into the page.
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
 
     camera = new THREE.PerspectiveCamera(38, 1, 0.1, 5000);
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
 
-    // A gradient environment gives the metal something to reflect. Without one
-    // a metalness-heavy material has nothing to mirror and renders flat.
+    // A gradient environment gives the surface something to reflect. Without
+    // one, anything metallic has nothing to mirror and renders flat.
     (function () {
       const c = document.createElement('canvas');
       c.width = 8; c.height = 256;
@@ -476,219 +472,8 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     rimLight.position.set(-3, -1.5, -2);
     scene.add(rimLight);
 
-    // Model and dust share a pivot, so the mouse steers the whole composition
-    // rather than sliding the object through a static cloud.
     pivot = new THREE.Group();
     scene.add(pivot);
-
-    /* ----------------------------------------------------------------
-       Particles.
-
-       Curl noise is the standard way to get drifting, filament-like dust:
-       sample a 3D noise field three times to build a vector field, then take
-       its curl, which is divergence-free. Divergence-free means the flow
-       never piles particles into blobs or drains a region, which is why the
-       cloud keeps its structure instead of collapsing.
-
-       Large demos push this through an FBO simulation pass to reach a million
-       particles. At this count the displacement fits directly in the vertex
-       shader, with no ping-pong render targets.
-       ---------------------------------------------------------------- */
-    const PARTICLE_COUNT = 26000;
-
-    const noiseGLSL = `
-      vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
-      vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
-      vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
-      vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
-      float snoise(vec3 v){
-        const vec2 C=vec2(1.0/6.0,1.0/3.0);
-        const vec4 D=vec4(0.0,0.5,1.0,2.0);
-        vec3 i=floor(v+dot(v,C.yyy));
-        vec3 x0=v-i+dot(i,C.xxx);
-        vec3 g=step(x0.yzx,x0.xyz);
-        vec3 l=1.0-g;
-        vec3 i1=min(g.xyz,l.zxy);
-        vec3 i2=max(g.xyz,l.zxy);
-        vec3 x1=x0-i1+C.xxx;
-        vec3 x2=x0-i2+C.yyy;
-        vec3 x3=x0-D.yyy;
-        i=mod289(i);
-        vec4 p=permute(permute(permute(
-                i.z+vec4(0.0,i1.z,i2.z,1.0))
-              + i.y+vec4(0.0,i1.y,i2.y,1.0))
-              + i.x+vec4(0.0,i1.x,i2.x,1.0));
-        float n_=0.142857142857;
-        vec3 ns=n_*D.wyz-D.xzx;
-        vec4 j=p-49.0*floor(p*ns.z*ns.z);
-        vec4 x_=floor(j*ns.z);
-        vec4 y_=floor(j-7.0*x_);
-        vec4 x=x_*ns.x+ns.yyyy;
-        vec4 y=y_*ns.x+ns.yyyy;
-        vec4 h=1.0-abs(x)-abs(y);
-        vec4 b0=vec4(x.xy,y.xy);
-        vec4 b1=vec4(x.zw,y.zw);
-        vec4 s0=floor(b0)*2.0+1.0;
-        vec4 s1=floor(b1)*2.0+1.0;
-        vec4 sh=-step(h,vec4(0.0));
-        vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;
-        vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
-        vec3 p0=vec3(a0.xy,h.x);
-        vec3 p1=vec3(a0.zw,h.y);
-        vec3 p2=vec3(a1.xy,h.z);
-        vec3 p3=vec3(a1.zw,h.w);
-        vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
-        p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
-        vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);
-        m=m*m;
-        return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
-      }
-      vec3 snoiseVec3(vec3 x){
-        return vec3(
-          snoise(x),
-          snoise(vec3(x.y-19.1,x.z+33.4,x.x+47.2)),
-          snoise(vec3(x.z+74.2,x.x-124.5,x.y+99.4))
-        );
-      }
-      vec3 curlNoise(vec3 p){
-        const float e=0.12;
-        vec3 dx=vec3(e,0.0,0.0), dy=vec3(0.0,e,0.0), dz=vec3(0.0,0.0,e);
-        vec3 px0=snoiseVec3(p-dx), px1=snoiseVec3(p+dx);
-        vec3 py0=snoiseVec3(p-dy), py1=snoiseVec3(p+dy);
-        vec3 pz0=snoiseVec3(p-dz), pz1=snoiseVec3(p+dz);
-        float x=py1.z-py0.z-pz1.y+pz0.y;
-        float y=pz1.x-pz0.x-px1.z+px0.z;
-        float z=px1.y-px0.y-py1.x+py0.x;
-        return normalize(vec3(x,y,z)/(2.0*e));
-      }
-    `;
-
-    particleMaterial = new THREE.ShaderMaterial({
-      uniforms: {
-        uTime:   { value: 0 },
-        uSize:   { value: 1.5 },
-        uRatio:  { value: pixelRatio },
-        uAmp:    { value: 1 },
-        uMotion: { value: reduced ? 0 : 1 },
-        uColor:  { value: new THREE.Color(0x111111) }
-      },
-      vertexShader: noiseGLSL + `
-        attribute float aScale;
-        attribute float aAlpha;
-        attribute float aSeed;
-        uniform float uTime, uSize, uRatio, uAmp, uMotion;
-        varying float vAlpha;
-        void main(){
-          vec3 p = position;
-          // A frozen slice of the field still reads as a cloud, so reduced
-          // motion keeps the look and drops only the movement.
-          float t = uTime * 0.05 * uMotion;
-          vec3 flow = curlNoise(p * 0.26 + vec3(0.0, t, t * 0.6) + aSeed * 4.3);
-          p += flow * uAmp * (0.55 + aSeed * 0.9);
-          float a = uTime * 0.018 * uMotion;
-          float s = sin(a), c = cos(a);
-          p = vec3(p.x * c - p.z * s, p.y, p.x * s + p.z * c);
-          vec4 mv = modelViewMatrix * vec4(p, 1.0);
-          gl_Position = projectionMatrix * mv;
-          gl_PointSize = uSize * aScale * uRatio * (320.0 / max(0.001, -mv.z));
-          vAlpha = aAlpha;
-        }
-      `,
-      fragmentShader: `
-        precision mediump float;
-        uniform vec3 uColor;
-        varying float vAlpha;
-        void main(){
-          // Round the square point sprite off, or the dust reads as pixels.
-          float d = length(gl_PointCoord - 0.5);
-          float mask = smoothstep(0.5, 0.12, d);
-          if (mask <= 0.01) discard;
-          gl_FragColor = vec4(uColor, vAlpha * mask);
-        }
-      `,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.NormalBlending
-    });
-
-    function buildParticles(radius) {
-      const positions = new Float32Array(PARTICLE_COUNT * 3);
-      const scales = new Float32Array(PARTICLE_COUNT);
-      const alphas = new Float32Array(PARTICLE_COUNT);
-      const seeds = new Float32Array(PARTICLE_COUNT);
-
-      // A uniform scatter reads as noise, not as a cloud. Seeding a few
-      // hundred centres and clustering most of the dust around them produces
-      // the clumps and voids that make it look like matter.
-      const CLUSTERS = 420;
-      const centres = [];
-      for (let c = 0; c < CLUSTERS; c++) {
-        const u = Math.random() * 2 - 1;
-        const theta = Math.random() * Math.PI * 2;
-        const su = Math.sqrt(1 - u * u);
-        let y = u;
-        const disc = Math.random() < 0.4;
-        if (disc) y *= 0.22;
-        const shell = 1.45 + Math.pow(Math.random(), 0.7) * 0.9;
-        const r = radius * (disc ? shell * 1.2 : shell);
-        centres.push([su * Math.cos(theta) * r, y * r, su * Math.sin(theta) * r]);
-      }
-
-      // Box-Muller: a gaussian offset gives each clump a soft falloff instead
-      // of a hard-edged ball of points.
-      function gauss() {
-        let a = 0, b = 0;
-        while (a === 0) a = Math.random();
-        while (b === 0) b = Math.random();
-        return Math.sqrt(-2 * Math.log(a)) * Math.cos(2 * Math.PI * b);
-      }
-
-      for (let i = 0; i < PARTICLE_COUNT; i++) {
-        let x, y, z;
-        // A quarter stays diffuse so the clumps sit in a haze, not a vacuum.
-        if (Math.random() < 0.26) {
-          const u = Math.random() * 2 - 1;
-          const theta = Math.random() * Math.PI * 2;
-          const su = Math.sqrt(1 - u * u);
-          const r = radius * (1.35 + Math.pow(Math.random(), 1.6) * 2.0);
-          x = su * Math.cos(theta) * r;
-          y = u * r * 0.75;
-          z = su * Math.sin(theta) * r;
-        } else {
-          const c = centres[(Math.random() * CLUSTERS) | 0];
-          const spread = radius * (0.06 + Math.random() * 0.2);
-          x = c[0] + gauss() * spread;
-          y = c[1] + gauss() * spread;
-          z = c[2] + gauss() * spread;
-        }
-
-        positions[i * 3] = x;
-        positions[i * 3 + 1] = y;
-        positions[i * 3 + 2] = z;
-
-        // Dust thins out with distance, so the cloud has a soft edge and
-        // stops competing with the text in the corners.
-        const dist = Math.sqrt(x * x + y * y + z * z) / radius;
-        const falloff = Math.max(0.1, 1 - Math.max(0, dist - 1.9) * 0.5);
-
-        scales[i] = 0.5 + Math.pow(Math.random(), 2.0) * 1.9;
-        alphas[i] = (0.24 + Math.random() * 0.6) * falloff;
-        seeds[i] = Math.random();
-      }
-
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      geo.setAttribute('aScale', new THREE.BufferAttribute(scales, 1));
-      geo.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1));
-      geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
-
-      particleMaterial.uniforms.uAmp.value = radius * 0.72;
-      particleMaterial.uniforms.uSize.value = radius * 0.021;
-
-      const points = new THREE.Points(geo, particleMaterial);
-      points.frustumCulled = false;
-      pivot.add(points);
-    }
 
     function frameObject() {
       const vFov = camera.fov * Math.PI / 180;
@@ -698,9 +483,21 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       const distV = objectRadius / Math.sin(vFov / 2);
       const distH = objectRadius / Math.sin(hFov / 2);
       const fitDist = Math.max(0.5, Math.max(distV, distH) * 1.95);
+
+      // Sit the model in the left half rather than dead centre: the index
+      // occupies the bottom right, and centring put the two on top of each
+      // other on any window that is short. Expressed as a share of the
+      // visible width at the model's depth, so it holds at every size.
+      const halfWidth = Math.tan(hFov / 2) * fitDist;
+      const wide = window.innerWidth > 860;
+      pivot.position.x = wide ? -halfWidth * 0.24 : 0;
+
       camera.position.set(0, 0, fitDist);
       camera.near = Math.max(0.01, fitDist - objectRadius * 8);
       camera.far = fitDist + objectRadius * 14;
+      // The camera stays on the axis and keeps looking at the origin: it is
+      // the model that steps aside. Following it with the camera would put it
+      // back in the middle of the frame.
       camera.lookAt(0, 0, 0);
       camera.updateProjectionMatrix();
     }
@@ -715,8 +512,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       if (ready) frameObject();
     }
 
-    const loader = new THREE.GLTFLoader();
-    loader.load(
+    new THREE.GLTFLoader().load(
       'data:model/gltf-binary;base64,' + GLB_BASE64,
       function (gltf) {
         const root = gltf.scene;
@@ -724,7 +520,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
         // A Spline export ships a skybox mesh alongside the model. Drop it so
         // the page shows through.
-        let cubeMesh = null, anyMesh = null;
+        let named = null, anyMesh = null;
         const toRemove = [];
         root.traverse(function (obj) {
           if (!obj.isMesh) return;
@@ -732,68 +528,43 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
           const pos = obj.geometry && obj.geometry.attributes && obj.geometry.attributes.position;
           if (!pos || pos.count < 4) return;
           if (!anyMesh) anyMesh = obj;
-          if (/^cube$/i.test(obj.name || '')) cubeMesh = obj;
+          if (/^cube$/i.test(obj.name || '')) named = obj;
         });
         toRemove.forEach(function (obj) { obj.parent && obj.parent.remove(obj); });
 
-        const mainMesh = cubeMesh || anyMesh;
-        if (!mainMesh) return;
+        const mesh = named || anyMesh;
+        if (!mesh) return;
 
         // Keep the model's own surface when it has one, and only stand in for
         // it when the file ships no material at all. Substituting here would
         // throw away the albedo, normal and roughness maps.
-        const hasOwnMaterial = !!(mainMesh.material && (
-          mainMesh.material.map ||
-          mainMesh.material.normalMap ||
-          mainMesh.material.roughnessMap
+        const hasOwnMaterial = !!(mesh.material && (
+          mesh.material.map || mesh.material.normalMap || mesh.material.roughnessMap
         ));
 
         if (hasOwnMaterial) {
-          mainMesh.material.envMapIntensity = 1.0;
-          mainMesh.material.needsUpdate = true;
+          mesh.material.envMapIntensity = 1;
+          mesh.material.needsUpdate = true;
         } else {
-          mainMesh.material = new THREE.MeshStandardMaterial({
-            color: 0xd2d2d2,
-            roughness: 0.28,
-            metalness: 0.7,
-            envMapIntensity: 1.15
+          mesh.material = new THREE.MeshStandardMaterial({
+            color: 0xd2d2d2, roughness: 0.28, metalness: 0.7, envMapIntensity: 1.15
           });
-          // A wireframe outline only reads on a low-poly shape; on a scanned
-          // mesh it turns into a hairball, so it goes with the substitute.
-          const edges = new THREE.LineSegments(
-            new THREE.EdgesGeometry(mainMesh.geometry, 20),
-            new THREE.LineBasicMaterial({ color: 0x0d0d0d, transparent: true, opacity: 0.4 })
-          );
-          mainMesh.add(edges);
         }
-
-        // Held so the scroll can dissolve it. Opacity needs the transparent
-        // flag set up front: switching it later forces a shader recompile
-        // mid-scroll, which stutters.
-        modelMaterial = mainMesh.material;
-        modelMaterial.transparent = true;
-        modelMaterial.opacity = 1;
 
         scene.add(root);
         root.updateMatrixWorld(true);
 
-        const box = new THREE.Box3().setFromObject(mainMesh);
+        const box = new THREE.Box3().setFromObject(mesh);
         const center = box.getCenter(new THREE.Vector3());
-        const sphere = box.getBoundingSphere(new THREE.Sphere());
-        objectRadius = sphere.radius || 1;
+        objectRadius = box.getBoundingSphere(new THREE.Sphere()).radius || 1;
 
         // attach() keeps the world transform, so moving the pivot to the
         // origin afterwards recenters the model on its own middle.
         pivot.position.copy(center);
         pivot.updateMatrixWorld(true);
-        pivot.attach(mainMesh);
-        pivot.position.set(0, 0, 0);
-        pivot.updateMatrixWorld(true);
-
-        buildParticles(objectRadius);
-
-        // Raised a little: dead centre put the model on top of the index.
+        pivot.attach(mesh);
         pivot.position.set(0, objectRadius * 0.22, 0);
+        pivot.updateMatrixWorld(true);
 
         ready = true;
         frameObject();
@@ -806,53 +577,26 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
   }
 
   /* ------------------------------------------------------------------ */
-  /* Mouse steering                                                      */
+  /* Scroll transition                                                   */
   /* ------------------------------------------------------------------ */
-  const REST_X = -0.04, REST_Y = 0.0;
-  let targetX = REST_X, targetY = REST_Y;
-  let currentX = REST_X, currentY = REST_Y;
-
-  window.addEventListener('pointermove', function (e) {
-    pointerX = e.clientX;
-    pointerY = e.clientY;
-    const nx = (e.clientX / window.innerWidth) * 2 - 1;
-    const ny = (e.clientY / window.innerHeight) * 2 - 1;
-    targetY = REST_Y + nx * 0.5;
-    targetX = REST_X + ny * 0.3;
-  }, { passive: true });
-
-  /* ------------------------------------------------------------------ */
-  /* Scroll transition to black                                          */
-  /* ------------------------------------------------------------------ */
-  // One value drives the whole transition: 0 is the white hero, 1 is the
-  // black field with nothing left but the dust. The DOM side is pure CSS
-  // opacity, so only the two WebGL properties need setting by hand.
-  let modelMaterial = null;
-
-  function applyFade(v) {
-    if (modelMaterial) modelMaterial.opacity = 1 - v;
-    // #111111 is 0.067 in linear terms; walking that up to 1 turns the dark
-    // dust white as the ground beneath it goes black.
-    if (particleMaterial) particleMaterial.uniforms.uColor.value.setScalar(0.067 + v * 0.933);
-  }
-
   if (window.gsap && window.ScrollTrigger) {
     gsap.registerPlugin(ScrollTrigger);
 
-    // The transition belongs to the wide layout only. On a phone the page is
-    // a plain scrolling document with no corridor to scrub against, and a
-    // corridor of zero height would send the timeline straight to the end,
-    // leaving the panels half retracted over the list. matchMedia builds the
-    // timeline inside the breakpoint and reverts it on the way out.
-    const mm = gsap.matchMedia();
-
-    mm.add('(min-width: 861px)', function () {
-      const fade = { v: 0 };
-
+    // Wide layout only. On a phone the page is a plain scrolling document
+    // with no corridor to scrub against, and a corridor of zero height would
+    // send the timeline straight to its end. matchMedia builds the tween
+    // inside the breakpoint and reverts it on the way out.
+    gsap.matchMedia().add('(min-width: 861px)', function () {
       // No pin: every visual is position:fixed already, so the corridor alone
-      // gives the timeline something to scrub against. That sidesteps the
+      // gives the tween something to scrub against. That sidesteps the
       // pin-spacing and layout-shift pitfalls entirely.
-      const tl = gsap.timeline({
+      gsap.to('.wipe span', {
+        scaleY: 1,
+        ease: 'none',
+        // Each column grows from the bottom and starts later than the one to
+        // its left, so their top edges form a staircase climbing across the
+        // screen. At the end they meet and the page is solid black.
+        stagger: 0.09,
         scrollTrigger: {
           trigger: '#corridor',
           start: 'top top',
@@ -860,44 +604,17 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
           scrub: 1
         }
       });
-
-      // Everything the hero owns leaves together: the copy, the menu and the
-      // copy-prompt zone. autoAlpha adds visibility:hidden to the fade, which
-      // takes the zone out of hit-testing without a second rule to maintain.
-      tl.to('.overlay, .hotspot', { autoAlpha: 0, duration: 0.4 }, 0)
-        .to('.wipe span', {
-          scaleY: 0,
-          duration: 0.6,
-          // One full-height column per step. Each collapses towards its top
-          // edge, so the black climbs from the bottom, and each starts later
-          // than the one to its left: the boundary between white and black is
-          // a single staircase running across the viewport.
-          stagger: 0.09
-        }, 0.05)
-        // The model dissolves with the panels; only the dust survives, and it
-        // turns white on the way.
-        .to(fade, {
-          v: 1,
-          duration: 0.55,
-          onUpdate: function () { applyFade(fade.v); }
-        }, 0.1);
-
-      // Leaving the breakpoint, matchMedia reverts the tweens it owns; the two
-      // WebGL properties are not its business, so they are reset by hand.
-      return function () { applyFade(0); };
     });
   }
 
   /* ------------------------------------------------------------------ */
   /* Render loop                                                         */
   /* ------------------------------------------------------------------ */
-  const clock = window.THREE ? new THREE.Clock() : null;
-
   function frame() {
     requestAnimationFrame(frame);
 
-    // The cursor and the pill trail the pointer by the same easing, so they
-    // read as one lagging object rather than two.
+    // The cursor trails the pointer by the same easing as the model, so the
+    // whole page reacts with one weight.
     if (fine) {
       const ease = reduced ? 1 : 0.16;
       cursorX += (pointerX - cursorX) * ease;
@@ -906,8 +623,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       pillEl.style.transform = 'translate3d(' + (cursorX + 18) + 'px,' + (cursorY + 18) + 'px,0)';
     }
 
-    if (!ready || !renderer) return;
-    particleMaterial.uniforms.uTime.value = clock.getElapsedTime();
+    if (!ready) return;
     currentX += (targetX - currentX) * 0.055;
     currentY += (targetY - currentY) * 0.055;
     pivot.rotation.x = currentX;
