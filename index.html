@@ -9,8 +9,6 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;450&family=Inter+Tight:wght@400;500&display=swap">
 <style>
   :root {
-    /* Ink and rules are driven by the scroll timeline, which lerps them from
-       the light set to the dark set as the white panels retract. */
     --ink: #0d0d0d;
     --ink-dim: #6b6b6b;
     --rule: #dedede;
@@ -229,7 +227,10 @@
     position: relative;
     z-index: 5;
     min-height: 100vh;
-    background: var(--dark);
+    /* Transparent rather than black: the page body is already black and the
+       dust canvas sits behind, so the snow keeps falling under the content
+       instead of being covered by a second black rectangle. */
+    background: transparent;
     color: #f2f2f2;
     padding: clamp(22px, 3.4vw, 52px);
     display: flex;
@@ -290,7 +291,12 @@
 <!-- Hovering here offers the prompt behind the hero animation. It is a real
      button so the keyboard reaches it too, not only the mouse. -->
 <button class="hotspot" id="hotspot" type="button"
-        aria-label="Copier le prompt de l'animation d'accueil"></button>
+        aria-label="Copier le prompt de l'animation d'accueil">
+  <span class="pill" id="pill" aria-hidden="true">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+    <span id="pillLabel">Copier le prompt</span>
+  </span>
+</button>
 
 <div class="overlay">
   <div class="intro">
@@ -311,11 +317,6 @@
       <li><a href="demo-animations.html"><span class="name">Animations</span><span class="meta">( LIBRE )</span></a></li>
     </ul>
   </nav>
-</div>
-
-<div class="pill" id="pill" aria-hidden="true">
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-  <span id="pillLabel">Copier le prompt</span>
 </div>
 
 <div class="cursor" id="cursor" aria-hidden="true"></div>
@@ -766,6 +767,13 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
           mainMesh.add(edges);
         }
 
+        // Held so the scroll can dissolve it. Opacity needs the transparent
+        // flag set up front: switching it later forces a shader recompile
+        // mid-scroll, which stutters.
+        modelMaterial = mainMesh.material;
+        modelMaterial.transparent = true;
+        modelMaterial.opacity = 1;
+
         scene.add(root);
         root.updateMatrixWorld(true);
 
@@ -816,28 +824,16 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
   /* ------------------------------------------------------------------ */
   /* Scroll transition to black                                          */
   /* ------------------------------------------------------------------ */
-  const LIGHT = { ink: [13, 13, 13], dim: [107, 107, 107], rule: [222, 222, 222], dust: [17, 17, 17] };
-  const DARK  = { ink: [242, 242, 242], dim: [143, 143, 143], rule: [42, 42, 42], dust: [255, 255, 255] };
+  // One value drives the whole transition: 0 is the white hero, 1 is the
+  // black field with nothing left but the dust. The DOM side is pure CSS
+  // opacity, so only the two WebGL properties need setting by hand.
+  let modelMaterial = null;
 
-  function mix(a, b, t) { return Math.round(a + (b - a) * t); }
-  function rgb(c) { return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')'; }
-
-  function applyTheme(t) {
-    const root = document.documentElement.style;
-    const ink = [mix(LIGHT.ink[0], DARK.ink[0], t), mix(LIGHT.ink[1], DARK.ink[1], t), mix(LIGHT.ink[2], DARK.ink[2], t)];
-    const dim = [mix(LIGHT.dim[0], DARK.dim[0], t), mix(LIGHT.dim[1], DARK.dim[1], t), mix(LIGHT.dim[2], DARK.dim[2], t)];
-    const rule = [mix(LIGHT.rule[0], DARK.rule[0], t), mix(LIGHT.rule[1], DARK.rule[1], t), mix(LIGHT.rule[2], DARK.rule[2], t)];
-    root.setProperty('--ink', rgb(ink));
-    root.setProperty('--ink-dim', rgb(dim));
-    root.setProperty('--rule', rgb(rule));
-    root.setProperty('--rule-strong', rgb(ink));
-    if (particleMaterial) {
-      particleMaterial.uniforms.uColor.value.setRGB(
-        mix(LIGHT.dust[0], DARK.dust[0], t) / 255,
-        mix(LIGHT.dust[1], DARK.dust[1], t) / 255,
-        mix(LIGHT.dust[2], DARK.dust[2], t) / 255
-      );
-    }
+  function applyFade(v) {
+    if (modelMaterial) modelMaterial.opacity = 1 - v;
+    // #111111 is 0.067 in linear terms; walking that up to 1 turns the dark
+    // dust white as the ground beneath it goes black.
+    if (particleMaterial) particleMaterial.uniforms.uColor.value.setScalar(0.067 + v * 0.933);
   }
 
   if (window.gsap && window.ScrollTrigger) {
@@ -851,7 +847,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     const mm = gsap.matchMedia();
 
     mm.add('(min-width: 861px)', function () {
-      const theme = { t: 0 };
+      const fade = { v: 0 };
 
       // No pin: every visual is position:fixed already, so the corridor alone
       // gives the timeline something to scrub against. That sidesteps the
@@ -865,26 +861,30 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         }
       });
 
-      tl.to('.intro', { opacity: 0, y: -24, duration: 0.35 }, 0)
-      .to('.wipe span', {
-        scaleY: 0,
-        duration: 0.6,
-        // One full-height column per step. Each collapses towards its top
-        // edge, so the black climbs from the bottom, and each starts later
-        // than the one to its left: the boundary between white and black is
-        // a single staircase running across the viewport.
-        stagger: 0.09
-      }, 0.05)
-      .to(theme, {
-        t: 1,
-        duration: 0.5,
-        onUpdate: function () { applyTheme(theme.t); }
-      }, 0.15);
+      // Everything the hero owns leaves together: the copy, the menu and the
+      // copy-prompt zone. autoAlpha adds visibility:hidden to the fade, which
+      // takes the zone out of hit-testing without a second rule to maintain.
+      tl.to('.overlay, .hotspot', { autoAlpha: 0, duration: 0.4 }, 0)
+        .to('.wipe span', {
+          scaleY: 0,
+          duration: 0.6,
+          // One full-height column per step. Each collapses towards its top
+          // edge, so the black climbs from the bottom, and each starts later
+          // than the one to its left: the boundary between white and black is
+          // a single staircase running across the viewport.
+          stagger: 0.09
+        }, 0.05)
+        // The model dissolves with the panels; only the dust survives, and it
+        // turns white on the way.
+        .to(fade, {
+          v: 1,
+          duration: 0.55,
+          onUpdate: function () { applyFade(fade.v); }
+        }, 0.1);
 
-      // Leaving the breakpoint: matchMedia reverts the tweens it owns, but the
-      // ink variables were written straight onto the root, so they are put
-      // back by hand.
-      return function () { applyTheme(0); };
+      // Leaving the breakpoint, matchMedia reverts the tweens it owns; the two
+      // WebGL properties are not its business, so they are reset by hand.
+      return function () { applyFade(0); };
     });
   }
 
