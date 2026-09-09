@@ -45,7 +45,7 @@
     z-index: 1;
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-rows: 1fr;
     pointer-events: none;
   }
   .wipe span {
@@ -263,7 +263,7 @@
     /* The wipe needs a scroll corridor the page no longer has room for, so
        the panels stay put and simply act as the white ground. */
     #corridor { display: none; }
-    .wipe { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+    .wipe { grid-template-columns: repeat(3, 1fr); }
   }
 
   /* Coarse pointers have no cursor to trail and no hover to reveal a pill, so
@@ -282,8 +282,6 @@
 <body>
 
 <div class="wipe" aria-hidden="true">
-  <span></span><span></span><span></span><span></span><span></span><span></span>
-  <span></span><span></span><span></span><span></span><span></span><span></span>
   <span></span><span></span><span></span><span></span><span></span><span></span>
 </div>
 
@@ -867,25 +865,15 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         }
       });
 
-      // Read the column count back from the CSS rather than hardcoding it, so
-      // the staircase still walks the grid when the breakpoint changes it.
-      const wipeEl = document.querySelector('.wipe');
-      const cols = getComputedStyle(wipeEl).gridTemplateColumns.split(' ').filter(Boolean).length || 6;
-      const rows = Math.ceil(wipeEl.children.length / cols);
-
       tl.to('.intro', { opacity: 0, y: -24, duration: 0.35 }, 0)
       .to('.wipe span', {
         scaleY: 0,
         duration: 0.6,
-        // Every panel collapses towards its top edge, so the black is
-        // uncovered from the bottom up. The delay climbs with the column and
-        // with the distance from the bottom row, which is what turns a flat
-        // wipe into a staircase running up and to the right.
-        stagger: function (i) {
-          const row = Math.floor(i / cols);
-          const col = i % cols;
-          return col * 0.075 + (rows - 1 - row) * 0.055;
-        }
+        // One full-height column per step. Each collapses towards its top
+        // edge, so the black climbs from the bottom, and each starts later
+        // than the one to its left: the boundary between white and black is
+        // a single staircase running across the viewport.
+        stagger: 0.09
       }, 0.05)
       .to(theme, {
         t: 1,
