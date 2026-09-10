@@ -7,26 +7,24 @@
 <style>
   :root {
     --ground: #ffffff;
-    --surface: #f4f4f4;
+    --surface: #f5f5f5;
     --card-edge: #dcdcdc;
     --ink: #111111;
     --ink-dim: #6e6e6e;
     --accent: #161616;
     --line: rgba(17,17,17,0.14);
-    --mark: rgba(17,17,17,0.09);
     --font-display: 'Neue Haas Grotesk Display Pro', 'NHaasGroteskDSPro', 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --ground: #0a0a0a;
-      --surface: #171717;
+      --surface: #161616;
       --card-edge: #333333;
       --ink: #f2f2f2;
       --ink-dim: #9a9a9a;
       --accent: #ececec;
       --line: rgba(242,242,242,0.16);
-      --mark: rgba(242,242,242,0.13);
     }
   }
   * { box-sizing: border-box; }
@@ -70,32 +68,15 @@
   .side-nav a { color: var(--ink-dim); text-decoration: none; padding: 7px 8px; border-radius: 6px; }
   .side-nav a:hover { color: var(--ink); }
   .side-nav a[aria-current="page"] { color: var(--ink); background: var(--surface); font-weight: 600; }
-  .side-sub {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin: 2px 0 4px 14px;
-    border-left: 1px solid var(--line);
-    padding-left: 10px;
-  }
-  .side-sub a { color: var(--ink-dim); text-decoration: none; font-size: 11px; padding: 5px 6px; border-radius: 5px; }
-  .side-sub a:hover { color: var(--ink); }
-  .side-sub a[aria-current="page"] { color: var(--ink); font-weight: 600; }
 
-  main.content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-
-  .section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  main.content {
     flex: 1;
-    padding: clamp(24px, 4vw, 44px);
-    text-align: center;
+    min-width: 0;
+    padding: clamp(22px, 4vw, 44px) clamp(18px, 4vw, 44px) 90px;
   }
-  .section[hidden] { display: none; }
 
-  .section header { max-width: 660px; }
-  .section .eyebrow {
+  header.intro { max-width: 68ch; }
+  .eyebrow {
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.14em;
@@ -104,91 +85,28 @@
     font-weight: 500;
     margin: 0 0 8px;
   }
-  .section h2 {
+  h1 {
     font-weight: 500;
-    font-size: clamp(20px, 3vw, 27px);
-    letter-spacing: -0.02em;
+    font-size: clamp(22px, 3.2vw, 30px);
+    letter-spacing: -0.025em;
     margin: 0 0 10px;
     text-wrap: balance;
   }
-  .section .intro {
+  header.intro p {
     color: var(--ink-dim);
-    font-size: 13.5px;
-    line-height: 1.65;
-    margin: 0;
-    max-width: 62ch;
-  }
-
-  /* --- Carte de démonstration ---------------------------------------- */
-  .cards {
-    width: 100%;
-    max-width: 900px;
-    margin: 22px 0 0;
-    display: grid;
-    gap: 16px;
-  }
-  .cards.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-
-  .card {
-    border: 1px solid var(--card-edge);
-    border-radius: 12px;
-    background: var(--surface);
-    padding: 18px 18px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    text-align: left;
-    min-width: 0;
-  }
-  .card-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .card-title {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin: 0;
-  }
-  .card-note {
-    font-size: 12.5px;
-    line-height: 1.6;
-    color: var(--ink-dim);
-    margin: 0;
-  }
-
-  .demo-text {
-    font-size: clamp(19px, 2.4vw, 27px);
-    font-weight: 500;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-    margin: 0;
-    min-height: 2.6em;
-  }
-  .demo-text.small { font-size: clamp(15px, 1.6vw, 17px); font-weight: 400; line-height: 1.6; }
-
-  code, .code {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
+    font-size: 14px;
     line-height: 1.7;
+    margin: 0 0 6px;
   }
-  .code {
-    background: var(--ground);
-    border: 1px solid var(--card-edge);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin: 0;
-    white-space: pre;
-    overflow-x: auto;
-    color: var(--ink-dim);
-  }
-  .code b { color: var(--ink); font-weight: 500; }
+  header.intro b { color: var(--ink); font-weight: 500; }
 
-  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 4px;
+    flex-wrap: wrap;
+  }
   button.act {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -198,19 +116,77 @@
     background: var(--ground);
     border: 1px solid var(--card-edge);
     border-radius: 999px;
-    padding: 7px 13px;
+    padding: 8px 14px;
     cursor: pointer;
   }
   button.act:hover { border-color: var(--ink); }
-  button.act[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+  .toolbar span {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+    letter-spacing: 0.04em;
+  }
 
-  /* Les boîtes que SplitText fabrique, rendues visibles à la demande. */
-  .show-boxes .split-char,
-  .show-boxes .split-word,
-  .show-boxes .split-line { outline: 1px solid var(--mark); }
-  .show-boxes .split-line { outline-color: var(--ink-dim); }
+  .grid {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+    gap: 14px;
+  }
 
-  .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 20px; }
+  /* Chaque carte est un bouton : un clic rejoue son animation, et le
+     clavier y accède sans rien de plus à écrire. */
+  .anim {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    background: var(--surface);
+    border: 1px solid var(--card-edge);
+    border-radius: 12px;
+    padding: 16px 16px 14px;
+    cursor: pointer;
+    transition: border-color 160ms ease;
+  }
+  .anim:hover, .anim:focus-visible { border-color: var(--ink); }
+
+  .anim-name {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .anim-text {
+    display: block;
+    font-size: 19px;
+    font-weight: 500;
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+    min-height: 3.9em;
+    /* Nécessaire aux rotations par caractère : sans profondeur déclarée,
+       une rotation sur X se réduit à un écrasement vertical. */
+    perspective: 500px;
+  }
+
+  .anim-note {
+    display: block;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    margin-top: 12px;
+    padding-top: 11px;
+    border-top: 1px solid var(--card-edge);
+  }
+
+  .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 0; }
 
   /* --- Encart prompt -------------------------------------------------- */
   .prompt-tab {
@@ -245,8 +221,7 @@
   @media (max-width: 720px) {
     body { flex-direction: column; }
     .sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
-    .side-nav { flex-direction: row; flex-wrap: wrap; align-items: center; }
-    .side-sub { flex-direction: row; margin: 0; border-left: 0; padding-left: 0; }
+    .side-nav { flex-direction: row; flex-wrap: wrap; }
   }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -262,156 +237,24 @@
     <a href="demo-carrousel.html">Carrousel</a>
     <a href="demo-objet.html">Objet 3D</a>
     <a href="demo-texte.html" aria-current="page">Animation texte</a>
-    <div class="side-sub">
-      <a href="demo-texte.html#decouper" data-target="decouper">Découper</a>
-      <a href="demo-texte.html#masquer" data-target="masquer">Masquer</a>
-      <a href="demo-texte.html#cadencer" data-target="cadencer">Cadencer</a>
-      <a href="demo-texte.html#tenir" data-target="tenir">Tenir</a>
-    </div>
     <a href="demo-tambour.html">Tambour</a>
   </nav>
 </aside>
 
 <main class="content">
+  <header class="intro">
+    <p class="eyebrow">GSAP SplitText</p>
+    <h1>Douze animations de texte, et leur nom.</h1>
+    <p>Chaque carte porte le <b>nom anglais de l'effet</b>. Ce nom n'est pas décoratif : c'est le terme que les développeurs emploient entre eux, celui que la documentation utilise, et celui qu'il faut écrire pour obtenir l'effet quand on demande le code à une IA. « Fais un <b>line mask reveal</b> sur le titre » donne le bon résultat du premier coup ; « fais apparaître le titre joliment » ne le donne jamais.</p>
+    <p>Cliquez une carte pour rejouer son animation.</p>
+  </header>
 
-  <!-- ============ 1. DÉCOUPER ============ -->
-  <section class="section" id="section-decouper">
-    <header>
-      <p class="eyebrow">SplitText · type</p>
-      <h2>Trois façons de découper la même phrase.</h2>
-      <p class="intro">SplitText remplace le texte par des éléments imbriqués : une boîte par ligne, par mot ou par caractère, selon ce qu'on lui demande. Ce sont ces boîtes qu'on anime ensuite. Affichez-les pour voir ce que le plugin fabrique réellement.</p>
-    </header>
+  <div class="toolbar">
+    <button class="act" id="replayAll" type="button">Tout rejouer</button>
+    <span id="counter"></span>
+  </div>
 
-    <div class="cards">
-      <div class="card">
-        <div class="card-head">
-          <p class="card-title">Le découpage</p>
-          <button class="act" id="boxToggle" type="button" aria-pressed="false">Montrer les boîtes</button>
-        </div>
-        <p class="demo-text" id="t-decouper">Une phrase se découpe en lignes, en mots, puis en caractères.</p>
-        <div class="controls">
-          <button class="act" data-split="chars" type="button">Caractères</button>
-          <button class="act" data-split="words" type="button">Mots</button>
-          <button class="act" data-split="lines" type="button">Lignes</button>
-        </div>
-        <pre class="code" id="code-decouper"></pre>
-        <p class="card-note">Un découpage en caractères produit aussi les mots, car les caractères doivent bien être regroupés quelque part. Demander <code>"chars"</code> seul suffit donc rarement : c'est <code>"chars,words"</code> qu'on écrit en pratique.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 2. MASQUER ============ -->
-  <section class="section" id="section-masquer">
-    <header>
-      <p class="eyebrow">SplitText · mask</p>
-      <h2>Le masque change tout, et ne coûte qu'un mot.</h2>
-      <p class="intro">Sans masque, un mot qui monte vient de nulle part : on le voit traverser l'espace au-dessus de sa ligne. Avec <code>mask</code>, SplitText enveloppe chaque unité dans une boîte qui coupe ce qui dépasse, et le texte semble surgir de derrière un bord net. Les deux cartes jouent la même animation.</p>
-    </header>
-
-    <div class="cards two">
-      <div class="card">
-        <div class="card-head"><p class="card-title">Sans masque</p></div>
-        <p class="demo-text" id="t-nomask">Le texte arrive de nulle part.</p>
-        <pre class="code"><b>type</b>: "lines"</pre>
-        <p class="card-note">Les lignes montent depuis l'extérieur du cadre. Rien ne les arrête : on voit le mouvement d'approche.</p>
-      </div>
-      <div class="card">
-        <div class="card-head"><p class="card-title">Avec masque</p></div>
-        <p class="demo-text" id="t-mask">Le texte surgit de derrière un bord.</p>
-        <pre class="code"><b>type</b>: "lines", <b>mask</b>: "lines"</pre>
-        <p class="card-note">Chaque ligne est enveloppée dans une boîte qui coupe le débordement. Le mouvement d'approche est caché, et la révélation est franche.</p>
-      </div>
-    </div>
-
-    <div class="cards">
-      <div class="card">
-        <div class="controls">
-          <button class="act" id="replayMask" type="button">Rejouer les deux</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 3. CADENCER ============ -->
-  <section class="section" id="section-cadencer">
-    <header>
-      <p class="eyebrow">SplitText · stagger &amp; propIndex</p>
-      <h2>L'ordre d'entrée raconte quelque chose.</h2>
-      <p class="intro">Une fois le texte découpé, ce n'est plus SplitText qui travaille mais le décalage de GSAP. Le même fondu change complètement de sens selon l'ordre dans lequel les caractères arrivent.</p>
-    </header>
-
-    <div class="cards">
-      <div class="card">
-        <div class="card-head"><p class="card-title">Ordre du décalage</p></div>
-        <p class="demo-text" id="t-stagger">Chaque ordre a son intention.</p>
-        <div class="controls">
-          <button class="act" data-from="start" type="button">Du début</button>
-          <button class="act" data-from="center" type="button">Du centre</button>
-          <button class="act" data-from="end" type="button">De la fin</button>
-          <button class="act" data-from="random" type="button">Au hasard</button>
-        </div>
-        <pre class="code" id="code-stagger"></pre>
-        <p class="card-note">« Du début » se lit comme une frappe au clavier, « du centre » comme une ouverture, « au hasard » comme une matérialisation. Même durée, même fondu : seul l'ordre diffère.</p>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <p class="card-title">propIndex · animer en CSS seul</p>
-          <button class="act" id="replayProp" type="button">Rejouer</button>
-        </div>
-        <p class="demo-text" id="t-prop">Sans une ligne de JavaScript d'animation.</p>
-        <pre class="code"><b>propIndex</b>: true   <span style="opacity:.7">→ chaque caractère reçoit --char: 1, 2, 3…</span>
-
-.split-char {
-  animation: rise .5s backwards;
-  animation-delay: calc(var(--char) * 28ms);
-}</pre>
-        <p class="card-note">Avec <code>propIndex</code>, SplitText écrit l'index de chaque unité dans une variable CSS. Le décalage se calcule alors en CSS, et l'animation tient sans GSAP — utile quand elle doit démarrer avant que le JavaScript ne soit prêt.</p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ 4. TENIR ============ -->
-  <section class="section" id="section-tenir">
-    <header>
-      <p class="eyebrow">SplitText · autoSplit, onSplit, aria, ignore, revert</p>
-      <h2>Ce qui fait qu'un texte découpé survit à la vraie vie.</h2>
-      <p class="intro">Découper du texte le fige : les lignes ont été calculées pour une largeur donnée et une police donnée. Redimensionnez la fenêtre, ou laissez une police web finir de charger, et le découpage ne correspond plus à rien. C'est le problème que ces options résolvent.</p>
-    </header>
-
-    <div class="cards">
-      <div class="card">
-        <div class="card-head">
-          <p class="card-title">autoSplit + onSplit · redimensionnez la fenêtre</p>
-          <button class="act" id="replayAuto" type="button">Rejouer</button>
-        </div>
-        <p class="demo-text small" id="t-auto">Redimensionnez cette fenêtre : les lignes sont recalculées pour la nouvelle largeur, et l'animation se rejoue sur le nouveau découpage. Sans <code>autoSplit</code>, les lignes resteraient coupées comme au premier rendu, et le masque trancherait au mauvais endroit.</p>
-        <pre class="code">SplitText.create("#t-auto", {
-  <b>type</b>: "lines", <b>mask</b>: "lines",
-  <b>autoSplit</b>: true,
-  <b>onSplit</b>(self) {
-    <span style="opacity:.7">// l'animation renvoyée est rejouée et nettoyée</span>
-    <span style="opacity:.7">// automatiquement à chaque redécoupage</span>
-    return gsap.from(self.lines, { yPercent: 100, stagger: .1 });
-  }
-});</pre>
-        <p class="card-note">Renvoyer l'animation depuis <code>onSplit</code> plutôt que la lancer à côté, c'est ce qui permet à SplitText de la tuer proprement avant de redécouper. Sans cela, chaque redimensionnement empile un tween de plus sur des éléments qui n'existent déjà plus.</p>
-      </div>
-
-      <div class="card">
-        <div class="card-head">
-          <p class="card-title">aria &amp; ignore · rester lisible et cliquable</p>
-          <button class="act" id="revertBtn" type="button">Annuler le découpage</button>
-        </div>
-        <p class="demo-text small" id="t-aria">Un lecteur d'écran ne doit pas épeler les lettres une à une, et <a href="index.html">ce lien</a> doit rester un lien.</p>
-        <pre class="code"><b>aria</b>: "auto"      <span style="opacity:.7">→ pose l'aria-label sur la phrase entière</span>
-<b>ignore</b>: "a"       <span style="opacity:.7">→ laisse le lien intact, non découpé</span>
-self.<b>revert</b>()    <span style="opacity:.7">→ restitue le HTML d'origine</span></pre>
-        <p class="card-note" id="ariaNote"></p>
-      </div>
-    </div>
-  </section>
-
+  <div class="grid" id="grid"></div>
 </main>
 
 <button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
@@ -426,17 +269,15 @@ self.<b>revert</b>()    <span style="opacity:.7">→ restitue le HTML d'origine<
       <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
     </div>
   </div>
-  <pre id="promptText">Construis une page HTML autonome qui illustre tout ce que sait faire le plugin SplitText de GSAP, en quatre parties.
+  <pre id="promptText">Construis une page HTML autonome qui présente, sous forme de galerie, douze animations de texte réalisées avec GSAP et son plugin SplitText.
 
-Découper : la même phrase découpée par caractères, par mots et par lignes, avec un bouton qui affiche les boîtes produites par le plugin pour qu'on voie ce qu'il fabrique dans le DOM.
+Cette page s'adresse à des étudiants. L'objectif n'est pas d'expliquer le code, mais de leur donner le vocabulaire : chaque carte porte le nom anglais de l'effet, celui qui figure dans la documentation et qu'il faut écrire pour obtenir cet effet quand on demande du code à une IA. N'affiche donc aucun extrait de code, seulement l'animation, son nom, et une phrase disant à quoi elle sert.
 
-Masquer : la même animation jouée côte à côte avec et sans l'option mask, pour montrer que sans masque le texte traverse l'espace au-dessus de sa ligne, et qu'avec masque il surgit de derrière un bord net.
+Couvre les trois familles : les révélations par masque (ligne, mot), les ordres de décalage (du début, du centre, au hasard, machine à écrire), et les effets par caractère (flou, échelle, rotation 3D, vague, élan élastique).
 
-Cadencer : le même fondu sur les caractères avec quatre ordres de décalage — du début, du centre, de la fin, au hasard — puis un exemple avec propIndex, où le décalage est calculé en CSS à partir de la variable écrite par le plugin, sans JavaScript d'animation.
+Chaque carte est un bouton : un clic rejoue son animation, et le clavier y accède. Au chargement, les cartes se déclenchent en cascade.
 
-Tenir : autoSplit avec onSplit qui renvoie son animation, pour que le texte se redécoupe au redimensionnement et que l'ancienne animation soit tuée proprement ; aria pour que la phrase reste lisible d'un lecteur d'écran ; ignore pour qu'un lien reste un lien ; revert pour rendre le HTML d'origine.
-
-Charge GSAP et SplitText depuis un CDN en version 3.13 ou supérieure, où le plugin est devenu gratuit. Affiche sous chaque démonstration la configuration exacte employée.</pre>
+Charge GSAP et SplitText en version 3.13 ou supérieure, où le plugin est devenu gratuit. Respecte prefers-reduced-motion en remplaçant les déplacements par de simples fondus.</pre>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
@@ -444,240 +285,179 @@ Charge GSAP et SplitText depuis un CDN en version 3.13 ou supérieure, où le pl
 <script>
 (function () {
   if (!window.gsap || !window.SplitText) {
-    document.querySelector('main.content').innerHTML =
+    document.getElementById('grid').innerHTML =
       '<p class="unsupported">GSAP n\'a pas pu se charger (connexion nécessaire au premier chargement). Rechargez la page.</p>';
     return;
   }
   gsap.registerPlugin(SplitText);
 
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Sous préférence de mouvement réduit, les déplacements deviennent de
-  // simples fondus : le découpage reste démontré, la translation disparaît.
-  var SHIFT = reduced ? 0 : 1;
 
-  var CLASSES = { charsClass: 'split-char', wordsClass: 'split-word', linesClass: 'split-line' };
-
-  /* ================= 1. DÉCOUPER ================= */
-  function initDecouper() {
-    var el = document.getElementById('t-decouper');
-    var code = document.getElementById('code-decouper');
-    var boxBtn = document.getElementById('boxToggle');
-    var buttons = document.querySelectorAll('#section-decouper [data-split]');
-    var split = null;
-
-    function run(kind) {
-      if (split) split.revert();
-
-      // "chars" implique "words" : les caractères doivent être regroupés
-      // dans un conteneur, sinon la ligne ne peut plus se couper aux mots.
-      var type = kind === 'chars' ? 'chars,words' : kind === 'words' ? 'words' : 'lines';
-      var conf = Object.assign({ type: type, aria: 'auto' }, CLASSES);
-      split = SplitText.create(el, conf);
-
-      var targets = split[kind];
-      gsap.from(targets, {
-        opacity: 0,
-        yPercent: 40 * SHIFT,
-        duration: 0.5,
-        ease: 'power3.out',
-        stagger: kind === 'chars' ? 0.018 : kind === 'words' ? 0.05 : 0.1
-      });
-
-      code.innerHTML = 'SplitText.create(el, { <b>type</b>: "' + type + '" });\n' +
-                       'gsap.from(split.<b>' + kind + '</b>, { opacity: 0, yPercent: 40 });\n' +
-                       '<span style="opacity:.7">→ ' + targets.length + ' élément' + (targets.length > 1 ? 's' : '') + ' produit' + (targets.length > 1 ? 's' : '') + '</span>';
-
-      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.split === kind)); });
-    }
-
-    buttons.forEach(function (b) { b.addEventListener('click', function () { run(b.dataset.split); }); });
-
-    boxBtn.addEventListener('click', function () {
-      var on = boxBtn.getAttribute('aria-pressed') !== 'true';
-      boxBtn.setAttribute('aria-pressed', String(on));
-      el.classList.toggle('show-boxes', on);
-      boxBtn.textContent = on ? 'Masquer les boîtes' : 'Montrer les boîtes';
-    });
-
-    run('chars');
-  }
-
-  /* ================= 2. MASQUER ================= */
-  function initMasquer() {
-    var plain = SplitText.create('#t-nomask', Object.assign({ type: 'lines', aria: 'auto' }, CLASSES));
-    var masked = SplitText.create('#t-mask', Object.assign({ type: 'lines', mask: 'lines', aria: 'auto' }, CLASSES));
-
-    function play() {
-      gsap.from(plain.lines, { yPercent: 100 * SHIFT, opacity: reduced ? 0 : 1, duration: 0.8, ease: 'power3.out', stagger: 0.12 });
-      gsap.from(masked.lines, { yPercent: 100 * SHIFT, opacity: reduced ? 0 : 1, duration: 0.8, ease: 'power3.out', stagger: 0.12 });
-    }
-    document.getElementById('replayMask').addEventListener('click', play);
-    play();
-  }
-
-  /* ================= 3. CADENCER ================= */
-  function initCadencer() {
-    var stagger = SplitText.create('#t-stagger', Object.assign({ type: 'chars,words', aria: 'auto' }, CLASSES));
-    var code = document.getElementById('code-stagger');
-    var buttons = document.querySelectorAll('#section-cadencer [data-from]');
-
-    function play(from) {
-      gsap.from(stagger.chars, {
-        opacity: 0,
-        yPercent: 60 * SHIFT,
-        duration: 0.5,
-        ease: 'power3.out',
-        // L'objet stagger porte l'ordre : « from » désigne le point de
-        // départ de la cascade, pas la valeur animée.
-        stagger: { each: 0.02, from: from }
-      });
-      code.innerHTML = 'stagger: { each: 0.02, <b>from</b>: "' + from + '" }';
-      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.from === from)); });
-    }
-    buttons.forEach(function (b) { b.addEventListener('click', function () { play(b.dataset.from); }); });
-    play('start');
-
-    // propIndex : le plugin écrit --char sur chaque caractère, et c'est la
-    // feuille de style qui en tire le décalage. Aucune animation en JS.
-    var propSplit = SplitText.create('#t-prop', Object.assign({ type: 'chars,words', propIndex: true, aria: 'auto' }, CLASSES));
-    function replayCss() {
-      propSplit.chars.forEach(function (c) {
-        c.style.animation = 'none';
-        void c.offsetWidth;              // force le navigateur à repartir de zéro
-        c.style.animation = '';
-      });
-    }
-    document.getElementById('replayProp').addEventListener('click', replayCss);
-  }
-
-  /* ================= 4. TENIR ================= */
-  function initTenir() {
-    // autoSplit redécoupe quand la police finit de charger ou que la
-    // largeur change ; l'animation renvoyée par onSplit est tuée puis
-    // rejouée à chaque fois, sans empilement.
-    var auto = SplitText.create('#t-auto', Object.assign({
-      type: 'lines',
-      mask: 'lines',
-      autoSplit: true,
-      aria: 'auto',
-      onSplit: function (self) {
-        return gsap.from(self.lines, {
-          yPercent: 100 * SHIFT,
-          opacity: reduced ? 0 : 1,
-          duration: 0.7,
-          ease: 'power3.out',
-          stagger: 0.08
+  /* Les douze effets. « name » est le terme à employer pour demander
+     l'effet ; « note » dit quand s'en servir. Aucun code affiché : la page
+     enseigne le vocabulaire, pas la syntaxe. */
+  var ANIMS = [
+    {
+      name: 'Line mask reveal',
+      text: 'Chaque ligne monte derrière un bord net, comme tirée d\'une fente.',
+      note: 'La révélation de référence pour un titre ou un chapô. Le masque cache la course du texte : on ne le voit jamais arriver de l\'extérieur.',
+      split: { type: 'lines', mask: 'lines' },
+      play: function (s) { return gsap.from(s.lines, { yPercent: 100, duration: 0.9, ease: 'power4.out', stagger: 0.12 }); }
+    },
+    {
+      name: 'Word mask reveal',
+      text: 'Les mots se lèvent un par un derrière leur propre fente.',
+      note: 'Même principe, à l\'échelle du mot. Plus vif que la ligne, il convient aux phrases courtes et aux accroches.',
+      split: { type: 'words', mask: 'words' },
+      play: function (s) { return gsap.from(s.words, { yPercent: 110, duration: 0.7, ease: 'power3.out', stagger: 0.05 }); }
+    },
+    {
+      name: 'Fade up stagger',
+      text: 'Les lettres montent en fondu, dans l\'ordre de lecture.',
+      note: 'Le passe-partout. Discret, il ne détourne pas l\'attention du texte lui-même et fonctionne à toutes les tailles.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, y: 22, duration: 0.5, ease: 'power3.out', stagger: 0.018 }); }
+    },
+    {
+      name: 'Typewriter',
+      text: 'Les lettres s\'affichent une à une, sans bouger.',
+      note: 'Aucun déplacement, seulement une apparition. Évoque la frappe, le terminal, le message qui s\'écrit. Ne l\'utilisez pas sur un texte long : on attend.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, duration: 0.01, ease: 'none', stagger: 0.04 }); }
+    },
+    {
+      name: 'Stagger from center',
+      text: 'La cascade part du milieu et gagne les deux bords.',
+      note: 'Se lit comme une ouverture, un rideau qui s\'écarte. Efficace sur un mot isolé, centré.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, y: 26, duration: 0.5, ease: 'power3.out', stagger: { each: 0.025, from: 'center' } }); }
+    },
+    {
+      name: 'Random reveal',
+      text: 'Les lettres arrivent dans le désordre.',
+      note: 'Se lit comme une matérialisation plutôt que comme une écriture. Utile quand le texte doit sembler apparaître, pas se composer.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, duration: 0.4, ease: 'power2.out', stagger: { each: 0.025, from: 'random' } }); }
+    },
+    {
+      name: 'Blur in',
+      text: 'Le texte sort du flou et se fixe.',
+      note: 'Évoque une mise au point photographique. Coûteux à l\'affichage : réservez-le à une phrase courte, jamais à un paragraphe.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, filter: 'blur(12px)', duration: 0.7, ease: 'power2.out', stagger: 0.02 }); }
+    },
+    {
+      name: 'Scale pop',
+      text: 'Chaque lettre surgit en dépassant sa taille.',
+      note: 'Le dépassement vient de l\'ease « back ». Joueur, un peu enfantin : parfait pour un jeu ou une marque légère, à éviter sur un ton sérieux.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, scale: 0, transformOrigin: '50% 100%', duration: 0.6, ease: 'back.out(2.4)', stagger: 0.02 }); }
+    },
+    {
+      name: 'Flip in 3D',
+      text: 'Les lettres basculent vers vous depuis leur tranche.',
+      note: 'Demande une perspective déclarée sur le conteneur, sans quoi la rotation se réduit à un écrasement vertical. C\'est l\'erreur la plus fréquente sur cet effet.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, rotationX: -95, transformOrigin: '50% 50% -18px', duration: 0.7, ease: 'power3.out', stagger: 0.025 }); }
+    },
+    {
+      name: 'Slide in from left',
+      text: 'Les mots entrent par le côté.',
+      note: 'Le sens de l\'entrée compte : de la gauche, il accompagne la lecture ; de la droite, il la contrarie et attire donc l\'œil.',
+      split: { type: 'words' },
+      play: function (s) { return gsap.from(s.words, { opacity: 0, x: -44, duration: 0.6, ease: 'power3.out', stagger: 0.045 }); }
+    },
+    {
+      name: 'Elastic drop',
+      text: 'Les lettres tombent et rebondissent avant de tenir.',
+      note: 'L\'ease « elastic » fait osciller la lettre autour de sa position finale. Très marqué : une seule ligne suffit, sinon la page devient agitée.',
+      split: { type: 'chars,words' },
+      play: function (s) { return gsap.from(s.chars, { opacity: 0, y: -55, duration: 1.1, ease: 'elastic.out(1, 0.45)', stagger: 0.028 }); }
+    },
+    {
+      name: 'Wave loop',
+      text: 'Les lettres ondulent sans fin.',
+      note: 'Le seul effet en boucle de cette page. Il attire l\'œil en permanence, donc il coûte cher en attention : gardez-le pour un mot, jamais pour du contenu à lire.',
+      split: { type: 'chars,words' },
+      loop: true,
+      play: function (s) {
+        return gsap.to(s.chars, {
+          y: -9,
+          duration: 0.55,
+          ease: 'sine.inOut',
+          // repeat et yoyo sont posés dans l'objet stagger, donc chaque
+          // lettre boucle sur son propre décalage : c'est ce qui fait l'onde
+          // plutôt qu'un saut collectif.
+          stagger: { each: 0.06, repeat: -1, yoyo: true }
         });
       }
-    }, CLASSES));
-
-    document.getElementById('replayAuto').addEventListener('click', function () {
-      gsap.from(auto.lines, { yPercent: 100 * SHIFT, opacity: reduced ? 0 : 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 });
-    });
-
-    var ariaEl = document.getElementById('t-aria');
-    var note = document.getElementById('ariaNote');
-    var revertBtn = document.getElementById('revertBtn');
-    var ariaSplit = null;
-
-    function describe() {
-      if (ariaSplit) {
-        var link = ariaEl.querySelector('a');
-        note.innerHTML = 'Découpé en <b>' + ariaSplit.chars.length + ' caractères</b>. ' +
-          'Nom accessible annoncé : « ' + (ariaEl.getAttribute('aria-label') || '—') + ' ». ' +
-          'Le lien est ' + (link && !link.querySelector('.split-char') ? 'resté intact' : 'découpé') + '.';
-      } else {
-        note.innerHTML = 'Découpage annulé : le HTML d\'origine est revenu, sans un seul élément ajouté.';
-      }
     }
+  ];
 
-    function split() {
-      ariaSplit = SplitText.create(ariaEl, Object.assign({
-        type: 'chars,words',
-        aria: 'auto',
-        ignore: 'a'          // le lien garde sa structure, donc son rôle
-      }, CLASSES));
-      gsap.from(ariaSplit.chars, { opacity: 0, duration: 0.4, stagger: 0.012, ease: 'none' });
-      revertBtn.textContent = 'Annuler le découpage';
-      describe();
-    }
+  var grid = document.getElementById('grid');
+  var built = [];
 
-    revertBtn.addEventListener('click', function () {
-      if (ariaSplit) {
-        ariaSplit.revert();
-        ariaSplit = null;
-        revertBtn.textContent = 'Redécouper';
-        describe();
-      } else {
-        split();
+  ANIMS.forEach(function (a, i) {
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'anim';
+    card.setAttribute('aria-label', 'Rejouer l\'animation ' + a.name);
+
+    var name = document.createElement('span');
+    name.className = 'anim-name';
+    name.textContent = a.name;
+
+    var text = document.createElement('span');
+    text.className = 'anim-text';
+    text.textContent = a.text;
+
+    var note = document.createElement('span');
+    note.className = 'anim-note';
+    note.textContent = a.note;
+
+    card.appendChild(name);
+    card.appendChild(text);
+    card.appendChild(note);
+    grid.appendChild(card);
+
+    // aria: "auto" repose le texte complet en nom accessible, sinon un
+    // lecteur d'écran épellerait les caractères un par un.
+    var conf = Object.assign({ aria: 'auto' }, a.split);
+    var split = SplitText.create(text, conf);
+
+    var entry = { def: a, split: split, tween: null };
+
+    entry.run = function () {
+      if (entry.tween) entry.tween.kill();
+      if (reduced) {
+        // Sous préférence de mouvement réduit, tout déplacement est
+        // remplacé par un fondu : la cadence reste lisible, la course non.
+        var targets = split.chars || split.words || split.lines;
+        gsap.set(targets, { clearProps: 'all' });
+        entry.tween = gsap.from(targets, { opacity: 0, duration: 0.4, stagger: 0.02 });
+        return;
       }
-    });
+      entry.tween = a.play(split);
+    };
 
-    split();
-  }
-
-  /* ================= Bascule des sections ================= */
-  var sections = {
-    decouper: { el: document.getElementById('section-decouper'), init: initDecouper },
-    masquer:  { el: document.getElementById('section-masquer'),  init: initMasquer },
-    cadencer: { el: document.getElementById('section-cadencer'), init: initCadencer },
-    tenir:    { el: document.getElementById('section-tenir'),    init: initTenir }
-  };
-  var subLinks = document.querySelectorAll('.side-sub a[data-target]');
-  var current = null;
-
-  function show(name) {
-    if (!sections[name] || name === current) return;
-    if (current) sections[current].el.hidden = true;
-    var next = sections[name];
-    next.el.hidden = false;
-    // Le découpage en lignes dépend de la largeur rendue : initialiser une
-    // section encore masquée donnerait des lignes calculées sur zéro pixel.
-    if (!next.initialized) { next.init(); next.initialized = true; }
-    subLinks.forEach(function (a) {
-      if (a.dataset.target === name) a.setAttribute('aria-current', 'page');
-      else a.removeAttribute('aria-current');
-    });
-    current = name;
-  }
-
-  subLinks.forEach(function (a) {
-    a.addEventListener('click', function (e) {
-      e.preventDefault();
-      show(a.dataset.target);
-      history.replaceState(null, '', '#' + a.dataset.target);
-    });
+    card.addEventListener('click', entry.run);
+    built.push(entry);
   });
 
-  var start = (location.hash || '').replace('#', '');
-  var initial = sections[start] ? start : 'decouper';
-  Object.keys(sections).forEach(function (n) { sections[n].el.hidden = true; });
-  show(initial);
+  document.getElementById('counter').textContent = built.length + ' effets';
 
-  window.addEventListener('hashchange', function () {
-    var n = (location.hash || '').replace('#', '');
-    if (sections[n]) show(n);
-  });
+  function playAll() {
+    built.forEach(function (e, i) {
+      // Une cascade entre les cartes, sinon douze animations simultanées
+      // ne se distinguent plus les unes des autres.
+      gsap.delayedCall(reduced ? 0 : i * 0.12, e.run);
+    });
+  }
+
+  document.getElementById('replayAll').addEventListener('click', playAll);
+  playAll();
 })();
 </script>
-
-<style>
-  /* L'animation que propIndex pilote : le délai vient de la variable CSS
-     écrite par SplitText, pas d'un tween. */
-  @keyframes rise {
-    from { opacity: 0; transform: translateY(0.5em); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  #t-prop .split-char {
-    display: inline-block;
-    animation: rise 0.5s backwards cubic-bezier(0.2, 0, 0, 1);
-    animation-delay: calc(var(--char) * 28ms);
-  }
-  @media (prefers-reduced-motion: reduce) {
-    #t-prop .split-char { animation-name: fadeOnly; }
-    @keyframes fadeOnly { from { opacity: 0; } to { opacity: 1; } }
-  }
-</style>
 
 <script>
 (function () {
