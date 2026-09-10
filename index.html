@@ -288,6 +288,9 @@
     padding: clamp(22px, 3.4vw, 52px);
     display: flex;
     align-items: center;
+    /* Le bloc est centré dans la page ; les lignes restent alignées à
+       gauche, sans quoi le nom et le capteur perdraient leur colonne. */
+    justify-content: center;
   }
 
   /* The lagging cursor, on top of everything. Difference blending means one
@@ -352,9 +355,11 @@
   </span>
 </button>
 
-<a class="cta" href="#next">
+<a class="cta" href="demo-voix.html">
   Voir les démos
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+  <!-- Flèche oblique et non descendante : le bouton quitte la page, il ne
+       fait plus défiler vers une section. -->
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
 </a>
 
 <div class="overlay">
