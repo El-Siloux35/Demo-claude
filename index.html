@@ -9,11 +9,16 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;450&family=Inter+Tight:wght@400;500&display=swap">
 <style>
   :root {
-    --ground: #ffffff;
-    --ink: #0d0d0d;
-    --ink-dim: #6b6b6b;
+    /* Le héros ouvre sur le noir ; les colonnes qui montent sont blanches
+       et c'est le blanc qui reste à la fin. Les jetons portent donc les
+       couleurs du départ, et --light celles de l'arrivée. */
+    --ground: #050505;
+    --ink: #f2f2f2;
+    --ink-dim: #9a9a9a;
+    --light: #ffffff;
+    --light-ink: #0d0d0d;
+    --light-dim: #6b6b6b;
     --rule: #dedede;
-    --dark: #050505;
     /* Neue Haas Grotesk Display is a licensed Monotype face and cannot be
        served from here. It leads the stack so a machine that has it uses it;
        Inter Tight is the served fallback, the closest free display grotesque. */
@@ -66,6 +71,8 @@
     position: fixed;
     inset: 0;
     z-index: 3;
+    display: grid;
+    align-content: end;
     padding: clamp(22px, 3.4vw, 52px);
     /* Transparent to the pointer, so hovering the copy zone and steering the
        3D both keep working straight through the text. */
@@ -85,7 +92,7 @@
     pointer-events: none;
   }
   .wipe span {
-    background: var(--dark);
+    background: var(--light);
     transform-origin: center bottom;
     transform: scaleY(0);
     will-change: transform;
@@ -101,7 +108,7 @@
 
   /* --- Copy ---------------------------------------------------------- */
 
-  .intro { max-width: 36rem; }
+  .intro { max-width: 42rem; }
 
   .eyebrow {
     font-family: var(--font-mono);
@@ -114,12 +121,12 @@
   }
 
   h1 {
-    font-size: clamp(30px, 4.2vw, 56px);
+    font-size: clamp(26px, 3.4vw, 46px);
     font-weight: 500;
-    line-height: 1.02;
+    line-height: 1.08;
     letter-spacing: -0.025em;
-    margin: 0 0 20px;
-    white-space: nowrap;
+    margin: 0 0 14px;
+    text-wrap: balance;
   }
 
   .tagline {
@@ -131,15 +138,21 @@
     text-wrap: pretty;
   }
 
-  /* Le seul élément cliquable du héros : il conduit à la liste. */
+  /* Fixé en haut à droite et au-dessus des colonnes, pour rester
+     disponible d'un bout à l'autre du défilement. Le mélange par
+     différence lui fait traverser le passage du noir au blanc sans qu'une
+     seule règle n'ait à changer : blanc sur fond noir, noir sur fond
+     blanc. */
   .cta {
-    pointer-events: auto;
+    position: fixed;
+    top: clamp(18px, 3vw, 40px);
+    right: clamp(18px, 3vw, 40px);
+    z-index: 7;
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    margin-top: 26px;
     padding: 11px 18px;
-    border: 1px solid var(--ink);
+    border: 1px solid #ffffff;
     border-radius: 999px;
     font-family: var(--font-mono);
     font-size: 11px;
@@ -147,10 +160,11 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     text-decoration: none;
-    color: var(--ink);
-    transition: background 200ms ease, color 200ms ease;
+    color: #ffffff;
+    mix-blend-mode: difference;
+    transition: opacity 200ms ease;
   }
-  .cta:hover { background: var(--ink); color: var(--ground); }
+  .cta:hover { opacity: 0.62; }
   .cta svg { display: block; }
 
   /* La liste vit désormais dans la section sombre, où le bouton conduit. */
@@ -167,23 +181,23 @@
     align-items: baseline;
     justify-content: space-between;
     gap: 16px;
-    border-top: 1px solid #2a2a2a;
+    border-top: 1px solid var(--rule);
     padding: 14px 0;
     text-decoration: none;
     color: inherit;
     transition-property: border-color, padding-inline-start;
     transition-duration: 200ms;
   }
-  .demos li:last-child a { border-bottom: 1px solid #2a2a2a; }
-  .demos a:hover { border-top-color: #f2f2f2; padding-inline-start: 10px; }
-  .demos li:last-child a:hover { border-bottom-color: #f2f2f2; }
+  .demos li:last-child a { border-bottom: 1px solid var(--rule); }
+  .demos a:hover { border-top-color: var(--light-ink); padding-inline-start: 10px; }
+  .demos li:last-child a:hover { border-bottom-color: var(--light-ink); }
   .demos .name { font-size: 16.5px; }
   .demos .meta {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 450;
     letter-spacing: 0.12em;
-    color: #8f8f8f;
+    color: var(--light-dim);
     white-space: nowrap;
   }
   .demos .eyebrow-dark {
@@ -192,7 +206,7 @@
     font-weight: 450;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #8f8f8f;
+    color: var(--light-dim);
     margin: 0 0 20px;
   }
 
@@ -236,7 +250,7 @@
     justify-content: center;
     pointer-events: none;
     margin: 0;
-    color: #f2f2f2;
+    color: var(--light-ink);
     font-size: clamp(28px, 5vw, 64px);
     font-weight: 500;
     letter-spacing: -0.025em;
@@ -264,8 +278,8 @@
     position: relative;
     z-index: 6;
     min-height: 100vh;
-    background: var(--dark);
-    color: #f2f2f2;
+    background: var(--light);
+    color: var(--light-ink);
     padding: clamp(22px, 3.4vw, 52px);
     display: flex;
     align-items: center;
@@ -333,17 +347,17 @@
   </span>
 </button>
 
+<a class="cta" href="#next">
+  Voir les démos
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+</a>
+
 <div class="overlay">
   <div class="intro">
     <p class="eyebrow">Démo Claude Code</p>
-    <h1>Huit démos d'interfaces.</h1>
-    <p class="tagline">Contrôle vocal, gestuel, captation du regard, 3D au scroll et animation. Huit pages autonomes, sans installation ni compilation.</p>
-    <a class="cta" href="#next">
-      Voir les démos
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-    </a>
+    <h1>Ouvrir la création d'interface à l'expérimentation avec le vibecoding.</h1>
+    <p class="tagline">Prise en main de Claude &times; Figma.</p>
   </div>
-
 </div>
 
 <div class="wipe" aria-hidden="true">
@@ -459,6 +473,11 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
   const REST_X = -0.04, REST_Y = 0;
   let targetX = REST_X, targetY = REST_Y;
   let currentX = REST_X, currentY = REST_Y;
+
+  // Pose imposée par le défilement, distincte de celle que dicte la souris.
+  // Les deux s'additionnent au rendu : la souris continue donc de répondre
+  // pendant que le défilement joue sa propre chorégraphie.
+  const pose = { spin: 0, tilt: 0, zoom: 1 };
 
   window.addEventListener('pointermove', function (e) {
     pointerX = e.clientX;
@@ -615,7 +634,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         uRatio:  { value: pixelRatio },
         uAmp:    { value: 1 },
         uMotion: { value: reduced ? 0 : 1 },
-        uColor:  { value: new THREE.Color(0x111111) }
+        uColor:  { value: new THREE.Color(0xffffff) }
       },
       vertexShader: noiseGLSL + `
         attribute float aScale;
@@ -744,12 +763,9 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       const distH = objectRadius / Math.sin(hFov / 2);
       const fitDist = Math.max(0.5, Math.max(distV, distH) * 1.95);
 
-      // Décalé vers la droite : l'accroche occupe le coin haut-gauche, et
-      // centrer le modèle le faisait passer dessous. Exprimé en part de la
-      // largeur visible à sa profondeur, donc valable à toute taille.
-      const halfWidth = Math.tan(hFov / 2) * fitDist;
-      const wide = window.innerWidth > 860;
-      pivot.position.x = wide ? halfWidth * 0.2 : 0;
+      // Recentré : l'accroche est passée en bas à gauche et le menu a quitté
+      // le héros, plus rien ne se dispute le milieu du cadre.
+      pivot.position.x = 0;
 
       camera.position.set(0, 0, fitDist);
       camera.near = Math.max(0.01, fitDist - objectRadius * 8);
@@ -874,28 +890,31 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         scrollTrigger: {
           trigger: '#corridor',
           start: 'top top',
-          end: '+=200%',
+          end: '+=300%',
           scrub: 1
         }
       });
 
-      tl.to('.wipe span', {
-        scaleY: 1,
-        ease: 'none',
-        // Each column grows from the bottom and starts later than the one to
-        // its left, so their top edges form a staircase climbing across the
-        // screen. At the end they meet and the page is solid black.
-        stagger: 0.09
-      }, 0)
-        // The line arrives once the black is laid down, letter by letter from
-        // below, as if the columns had pushed it up with them.
+      // Premier temps : la mise en page ne bouge pas d'un pixel. Tout le
+      // défilement passe dans l'objet, qui fait un tour complet en
+      // s'approchant puis revient à sa taille. C'est la pause : on avance
+      // dans la séquence sans que la page ne change.
+      tl.to(pose, { spin: Math.PI * 2, ease: 'none', duration: 1 }, 0)
+        .to(pose, { zoom: 1.24, tilt: -0.24, ease: 'sine.inOut', duration: 0.5 }, 0)
+        .to(pose, { zoom: 1, tilt: 0, ease: 'sine.inOut', duration: 0.5 }, 0.5)
+
+        // Second temps : les colonnes blanches montent et recouvrent le
+        // noir, chacune plus tard que sa voisine de gauche.
+        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1)
+
+        // La ligne arrive une fois le blanc posé.
         .from(letters, {
           yPercent: 120,
           opacity: 0,
           duration: 0.5,
           ease: 'power3.out',
           stagger: 0.035
-        }, 0.62);
+        }, 1.85);
     });
   }
 
@@ -919,8 +938,9 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
     particleMaterial.uniforms.uTime.value = clock.getElapsedTime();
     currentX += (targetX - currentX) * 0.055;
     currentY += (targetY - currentY) * 0.055;
-    pivot.rotation.x = currentX;
-    pivot.rotation.y = currentY;
+    pivot.rotation.x = currentX + pose.tilt;
+    pivot.rotation.y = currentY + pose.spin;
+    pivot.scale.setScalar(pose.zoom);
     renderer.render(scene, camera);
   }
   frame();
