@@ -1,10 +1,10 @@
 # Démos d'interfaces : voix, geste, regard, objet 3D, animations
 
-Sept démos d'interfaces à ouvrir dans un navigateur, sans installation ni
+Huit démos d'interfaces à ouvrir dans un navigateur, sans installation ni
 compilation. Chaque page est un fichier HTML autonome, et porte un encart noir
 « Voir le prompt » qui donne le prompt permettant de la reconstruire.
 
-`index.html` est la page d'accueil qui mène aux sept démos.
+`index.html` est la page d'accueil qui mène aux huit démos.
 
 ## Mettre en ligne
 
