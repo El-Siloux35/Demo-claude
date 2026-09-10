@@ -102,22 +102,20 @@
     text-wrap: balance;
   }
 
-  .intro {
-    color: var(--ink-dim);
-    font-size: 13.5px;
-    line-height: 1.65;
-    margin: 0;
-    max-width: 60ch;
-  }
-
   .stage {
     width: 100%;
     flex: 1;
-    min-height: 320px;
+    min-height: 340px;
     margin-top: 14px;
     position: relative;
     touch-action: none;
     cursor: grab;
+    /* La peau extérieure du cylindre est sombre : sur fond clair elle
+       formerait une masse opaque. La scène porte donc son propre fond,
+       quel que soit le thème de la page. */
+    background: #090909;
+    border-radius: 10px;
+    overflow: hidden;
   }
   .stage:active { cursor: grabbing; }
   .stage canvas { display: block; width: 100%; height: 100%; }
@@ -131,12 +129,6 @@
     margin: 6px 0 0;
   }
   .readout b { color: var(--ink); font-weight: 500; }
-
-  .hint {
-    font-size: 12px;
-    color: var(--ink-dim);
-    margin: 6px 0 4px;
-  }
 
   .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 20px; }
 
@@ -247,7 +239,6 @@
   <header>
     <p class="eyebrow">Démo : tambour d'images en 3D</p>
     <h1>On regarde l'intérieur du cylindre.</h1>
-    <p class="intro">Les images ne sont pas posées à plat sur un cercle : chaque panneau est une portion de cylindre, courbée à la géométrie, si bien que les bords se rejoignent sans couture. La paroi proche est écartée du rendu, et l'on voit donc la face interne de la paroi opposée. Faites tourner le tambour ; il s'arrête toujours sur une image.</p>
   </header>
 
   <div class="stage" id="stage">
@@ -255,7 +246,6 @@
   </div>
 
   <p class="readout" id="readout"><b>01</b> / 07 &middot; Voix</p>
-  <p class="hint">Glissez, ou utilisez la molette. Cliquez pour ouvrir la démo au centre.</p>
 </main>
 
 <button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
@@ -322,7 +312,7 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
     c.width = 512; c.height = 660;
     var g = c.getContext('2d');
 
-    g.fillStyle = '#0b0b0b';
+    g.fillStyle = '#242424';
     g.fillRect(0, 0, 512, 660);
 
     // Un motif par démo, tracé aux primitives : chaque affiche est
@@ -389,7 +379,7 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
     g.font = '500 20px "IBM Plex Mono", monospace';
     g.fillText(demo.n + '  ·  ' + demo.req.toUpperCase(), 256, 585);
 
-    g.strokeStyle = 'rgba(242,242,242,0.16)';
+    g.strokeStyle = 'rgba(242,242,242,0.28)';
     g.lineWidth = 2;
     g.strokeRect(1, 1, 510, 658);
 
@@ -426,49 +416,54 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
   var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
   renderer.setClearColor(0x000000, 0);
 
-  var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
-  camera.position.set(0, 1.4, 15.5);
-  camera.lookAt(0, 0, 0);
+  // Caméra surélevée, qui plonge légèrement : c'est l'inclinaison qui fait
+  // lire l'ellipse des bords, et donc le volume. À hauteur du centre, un
+  // cylindre se réduit visuellement à un mur incurvé.
+  var camera = new THREE.PerspectiveCamera(40, 1, 0.1, 200);
 
-  var drum = new THREE.Group();
-  scene.add(drum);
+  var rig = new THREE.Group();          // porte les deux cylindres
+  scene.add(rig);
 
   var RADIUS = 7.2;
   var ARC = (Math.PI * 2) / PANELS;
   var textures = DEMOS.map(function (d, i) { return poster(d, i); });
 
-  for (var i = 0; i < PANELS; i++) {
-    var mesh = new THREE.Mesh(
-      curvedPanel(RADIUS, ARC, 4.6, 24),
-      new THREE.MeshBasicMaterial({
-        map: textures[i % DEMOS.length],
-        // Seule la face interne est rendue : la paroi la plus proche de la
-        // caméra disparaît et l'on voit l'intérieur du tambour.
+  /* ------------------------------------------------------------------
+     Un cylindre complet, et non un mur : deux peaux sur la même
+     géométrie. L'intérieur porte les affiches et n'est visible que sur la
+     paroi lointaine ; l'extérieur est une peau sombre qui rend la paroi
+     proche visible sans masquer le fond. C'est cette seconde peau qui
+     ferme la forme — sans elle, il ne reste qu'un arc.
+     ------------------------------------------------------------------ */
+  function cylinder(radius, height, texOffset, skinColor) {
+    var group = new THREE.Group();
+    for (var i = 0; i < PANELS; i++) {
+      var geo = curvedPanel(radius, ARC, height, 24);
+
+      var inner = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        map: textures[(i + texOffset) % DEMOS.length],
         side: THREE.BackSide
-      })
-    );
-    mesh.rotation.y = i * ARC;
-    drum.add(mesh);
+      }));
+      inner.rotation.y = i * ARC;
+      group.add(inner);
+
+      var outer = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+        color: skinColor,
+        side: THREE.FrontSide
+      }));
+      outer.rotation.y = i * ARC;
+      group.add(outer);
+    }
+    return group;
   }
 
-  // Un second anneau, plus haut et plus petit, tournant en sens inverse.
-  // Purement décoratif : il donne au tambour son épaisseur.
-  var ring = new THREE.Group();
-  ring.position.y = 3.9;
-  scene.add(ring);
-  for (var j = 0; j < PANELS; j++) {
-    var small = new THREE.Mesh(
-      curvedPanel(RADIUS * 0.82, ARC, 1.9, 20),
-      new THREE.MeshBasicMaterial({
-        map: textures[(j + 3) % DEMOS.length],
-        side: THREE.BackSide,
-        transparent: true,
-        opacity: 0.3
-      })
-    );
-    small.rotation.y = j * ARC;
-    ring.add(small);
-  }
+  var lower = cylinder(RADIUS, 3.0, 0, 0x1a1a1a);
+  lower.position.y = -1.9;
+  rig.add(lower);
+
+  var upper = cylinder(RADIUS * 0.9, 2.0, 3, 0x151515);
+  upper.position.y = 2.6;
+  rig.add(upper);
 
   function resize() {
     var w = stage.clientWidth, h = stage.clientHeight;
@@ -476,6 +471,14 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+
+    // L'ensemble est plus large que haut : c'est donc l'axe horizontal qui
+    // contraint le cadrage dès que la fenêtre est étroite.
+    var vFov = camera.fov * Math.PI / 180;
+    var hFov = 2 * Math.atan(Math.tan(vFov / 2) * camera.aspect);
+    var dist = Math.max(RADIUS / Math.sin(hFov / 2), 4.6 / Math.sin(vFov / 2)) * 1.0;
+    camera.position.set(0, dist * 0.62, dist);
+    camera.lookAt(0, 0.2, 0);
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
@@ -485,10 +488,24 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
      Rotation : glisser ou molette donnent de la vitesse, le frottement la
      dissipe, puis le tambour rejoint l'image la plus proche.
      ------------------------------------------------------------------ */
-  var angle = 0;
+  var angle = 0;          // rotation acquise par le glissé et la molette
   var velocity = 0;
   var dragging = false;
   var lastX = 0;
+
+  // La souris influe en continu, sans rien faire tourner définitivement :
+  // elle ajoute un écart à la rotation acquise, et le rig s'incline
+  // légèrement. Deux pilotes distincts, additionnés au rendu.
+  var mouseSpin = 0, mouseSpinTarget = 0;
+  var mouseTilt = 0, mouseTiltTarget = 0;
+
+  window.addEventListener('pointermove', function (e) {
+    var r = stage.getBoundingClientRect();
+    var nx = ((e.clientX - r.left) / r.width) * 2 - 1;
+    var ny = ((e.clientY - r.top) / r.height) * 2 - 1;
+    mouseSpinTarget = nx * 0.5;
+    mouseTiltTarget = ny * 0.09;
+  }, { passive: true });
 
   stage.addEventListener('pointerdown', function (e) {
     dragging = true;
@@ -515,7 +532,7 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
   // L'image centrée se déduit de l'angle : pas besoin de lancer un rayon
   // dans la scène pour savoir laquelle est en face.
   function centredIndex() {
-    var steps = Math.round(-angle / ARC);
+    var steps = Math.round(-(angle + mouseSpin) / ARC);
     var k = ((steps % PANELS) + PANELS) % PANELS;
     return k % DEMOS.length;
   }
@@ -551,8 +568,18 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
       if (!reduced && velocity === 0) angle += 0.0004;   // dérive au repos
     }
 
-    drum.rotation.y = angle;
-    ring.rotation.y = -angle * 0.6;
+    // Interpolation vers la cible plutôt qu'application directe : le
+    // mouvement glisse au lieu de coller au pointeur.
+    mouseSpin += (mouseSpinTarget - mouseSpin) * 0.045;
+    mouseTilt += (mouseTiltTarget - mouseTilt) * 0.045;
+
+    // Les deux cylindres tournent en sens inverse, ce qui donne à
+    // l'ensemble sa profondeur : sans cela ils lisent comme un seul bloc.
+    lower.rotation.y = angle + mouseSpin;
+    upper.rotation.y = -(angle + mouseSpin) * 0.55;
+    rig.rotation.x = mouseTilt;
+    rig.rotation.z = mouseSpin * 0.03;
+
     updateReadout();
     renderer.render(scene, camera);
   }
