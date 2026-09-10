@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animation texte</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --surface: #f4f4f4;
+    --card-edge: #dcdcdc;
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --accent: #161616;
+    --line: rgba(17,17,17,0.14);
+    --mark: rgba(17,17,17,0.09);
+    --font-display: 'Neue Haas Grotesk Display Pro', 'NHaasGroteskDSPro', 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --surface: #171717;
+      --card-edge: #333333;
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --accent: #ececec;
+      --line: rgba(242,242,242,0.16);
+      --mark: rgba(242,242,242,0.13);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    display: flex;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 168px;
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid var(--line);
+    font-family: var(--font-mono);
+  }
+  .home-link {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .side-nav a { color: var(--ink-dim); text-decoration: none; padding: 7px 8px; border-radius: 6px; }
+  .side-nav a:hover { color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--surface); font-weight: 600; }
+  .side-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    margin: 2px 0 4px 14px;
+    border-left: 1px solid var(--line);
+    padding-left: 10px;
+  }
+  .side-sub a { color: var(--ink-dim); text-decoration: none; font-size: 11px; padding: 5px 6px; border-radius: 5px; }
+  .side-sub a:hover { color: var(--ink); }
+  .side-sub a[aria-current="page"] { color: var(--ink); font-weight: 600; }
+
+  main.content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+  .section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    padding: clamp(24px, 4vw, 44px);
+    text-align: center;
+  }
+  .section[hidden] { display: none; }
+
+  .section header { max-width: 660px; }
+  .section .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+  .section h2 {
+    font-weight: 500;
+    font-size: clamp(20px, 3vw, 27px);
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+  .section .intro {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 62ch;
+  }
+
+  /* --- Carte de démonstration ---------------------------------------- */
+  .cards {
+    width: 100%;
+    max-width: 900px;
+    margin: 22px 0 0;
+    display: grid;
+    gap: 16px;
+  }
+  .cards.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+  .card {
+    border: 1px solid var(--card-edge);
+    border-radius: 12px;
+    background: var(--surface);
+    padding: 18px 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+    min-width: 0;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .card-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 0;
+  }
+  .card-note {
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--ink-dim);
+    margin: 0;
+  }
+
+  .demo-text {
+    font-size: clamp(19px, 2.4vw, 27px);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin: 0;
+    min-height: 2.6em;
+  }
+  .demo-text.small { font-size: clamp(15px, 1.6vw, 17px); font-weight: 400; line-height: 1.6; }
+
+  code, .code {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    line-height: 1.7;
+  }
+  .code {
+    background: var(--ground);
+    border: 1px solid var(--card-edge);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 0;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--ink-dim);
+  }
+  .code b { color: var(--ink); font-weight: 500; }
+
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; }
+  button.act {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--ground);
+    border: 1px solid var(--card-edge);
+    border-radius: 999px;
+    padding: 7px 13px;
+    cursor: pointer;
+  }
+  button.act:hover { border-color: var(--ink); }
+  button.act[aria-pressed="true"] { background: var(--ink); color: var(--ground); border-color: var(--ink); }
+
+  /* Les boîtes que SplitText fabrique, rendues visibles à la demande. */
+  .show-boxes .split-char,
+  .show-boxes .split-word,
+  .show-boxes .split-line { outline: 1px solid var(--mark); }
+  .show-boxes .split-line { outline-color: var(--ink-dim); }
+
+  .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 20px; }
+
+  /* --- Encart prompt -------------------------------------------------- */
+  .prompt-tab {
+    position: fixed; right: 16px; bottom: 16px; z-index: 20;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: #000; color: #f2f2f2; border: 0; border-radius: 999px;
+    padding: 9px 14px; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed; right: 16px; bottom: 16px; z-index: 21;
+    width: min(560px, calc(100vw - 32px)); max-height: min(70vh, 560px);
+    overflow: auto; background: #000; color: #e8e8e8;
+    border-radius: 12px; padding: 14px 16px 18px;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .prompt-panel-head h2 {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 500; margin: 0; color: #9a9a9a;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    background: #1a1a1a; color: #e8e8e8; border: 0; border-radius: 7px;
+    padding: 5px 10px; font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre { margin: 0; white-space: pre-wrap; font-family: var(--font-mono); font-size: 12px; line-height: 1.65; }
+
+  @media (max-width: 720px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
+    .side-nav { flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .side-sub { flex-direction: row; margin: 0; border-left: 0; padding-left: 0; }
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-texte.html" aria-current="page">Animation texte</a>
+    <div class="side-sub">
+      <a href="demo-texte.html#decouper" data-target="decouper">Découper</a>
+      <a href="demo-texte.html#masquer" data-target="masquer">Masquer</a>
+      <a href="demo-texte.html#cadencer" data-target="cadencer">Cadencer</a>
+      <a href="demo-texte.html#tenir" data-target="tenir">Tenir</a>
+    </div>
+    <a href="demo-tambour.html">Tambour</a>
+  </nav>
+</aside>
+
+<main class="content">
+
+  <!-- ============ 1. DÉCOUPER ============ -->
+  <section class="section" id="section-decouper">
+    <header>
+      <p class="eyebrow">SplitText · type</p>
+      <h2>Trois façons de découper la même phrase.</h2>
+      <p class="intro">SplitText remplace le texte par des éléments imbriqués : une boîte par ligne, par mot ou par caractère, selon ce qu'on lui demande. Ce sont ces boîtes qu'on anime ensuite. Affichez-les pour voir ce que le plugin fabrique réellement.</p>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-head">
+          <p class="card-title">Le découpage</p>
+          <button class="act" id="boxToggle" type="button" aria-pressed="false">Montrer les boîtes</button>
+        </div>
+        <p class="demo-text" id="t-decouper">Une phrase se découpe en lignes, en mots, puis en caractères.</p>
+        <div class="controls">
+          <button class="act" data-split="chars" type="button">Caractères</button>
+          <button class="act" data-split="words" type="button">Mots</button>
+          <button class="act" data-split="lines" type="button">Lignes</button>
+        </div>
+        <pre class="code" id="code-decouper"></pre>
+        <p class="card-note">Un découpage en caractères produit aussi les mots, car les caractères doivent bien être regroupés quelque part. Demander <code>"chars"</code> seul suffit donc rarement : c'est <code>"chars,words"</code> qu'on écrit en pratique.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2. MASQUER ============ -->
+  <section class="section" id="section-masquer">
+    <header>
+      <p class="eyebrow">SplitText · mask</p>
+      <h2>Le masque change tout, et ne coûte qu'un mot.</h2>
+      <p class="intro">Sans masque, un mot qui monte vient de nulle part : on le voit traverser l'espace au-dessus de sa ligne. Avec <code>mask</code>, SplitText enveloppe chaque unité dans une boîte qui coupe ce qui dépasse, et le texte semble surgir de derrière un bord net. Les deux cartes jouent la même animation.</p>
+    </header>
+
+    <div class="cards two">
+      <div class="card">
+        <div class="card-head"><p class="card-title">Sans masque</p></div>
+        <p class="demo-text" id="t-nomask">Le texte arrive de nulle part.</p>
+        <pre class="code"><b>type</b>: "lines"</pre>
+        <p class="card-note">Les lignes montent depuis l'extérieur du cadre. Rien ne les arrête : on voit le mouvement d'approche.</p>
+      </div>
+      <div class="card">
+        <div class="card-head"><p class="card-title">Avec masque</p></div>
+        <p class="demo-text" id="t-mask">Le texte surgit de derrière un bord.</p>
+        <pre class="code"><b>type</b>: "lines", <b>mask</b>: "lines"</pre>
+        <p class="card-note">Chaque ligne est enveloppée dans une boîte qui coupe le débordement. Le mouvement d'approche est caché, et la révélation est franche.</p>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="controls">
+          <button class="act" id="replayMask" type="button">Rejouer les deux</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. CADENCER ============ -->
+  <section class="section" id="section-cadencer">
+    <header>
+      <p class="eyebrow">SplitText · stagger &amp; propIndex</p>
+      <h2>L'ordre d'entrée raconte quelque chose.</h2>
+      <p class="intro">Une fois le texte découpé, ce n'est plus SplitText qui travaille mais le décalage de GSAP. Le même fondu change complètement de sens selon l'ordre dans lequel les caractères arrivent.</p>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-head"><p class="card-title">Ordre du décalage</p></div>
+        <p class="demo-text" id="t-stagger">Chaque ordre a son intention.</p>
+        <div class="controls">
+          <button class="act" data-from="start" type="button">Du début</button>
+          <button class="act" data-from="center" type="button">Du centre</button>
+          <button class="act" data-from="end" type="button">De la fin</button>
+          <button class="act" data-from="random" type="button">Au hasard</button>
+        </div>
+        <pre class="code" id="code-stagger"></pre>
+        <p class="card-note">« Du début » se lit comme une frappe au clavier, « du centre » comme une ouverture, « au hasard » comme une matérialisation. Même durée, même fondu : seul l'ordre diffère.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <p class="card-title">propIndex · animer en CSS seul</p>
+          <button class="act" id="replayProp" type="button">Rejouer</button>
+        </div>
+        <p class="demo-text" id="t-prop">Sans une ligne de JavaScript d'animation.</p>
+        <pre class="code"><b>propIndex</b>: true   <span style="opacity:.7">→ chaque caractère reçoit --char: 1, 2, 3…</span>
+
+.split-char {
+  animation: rise .5s backwards;
+  animation-delay: calc(var(--char) * 28ms);
+}</pre>
+        <p class="card-note">Avec <code>propIndex</code>, SplitText écrit l'index de chaque unité dans une variable CSS. Le décalage se calcule alors en CSS, et l'animation tient sans GSAP — utile quand elle doit démarrer avant que le JavaScript ne soit prêt.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. TENIR ============ -->
+  <section class="section" id="section-tenir">
+    <header>
+      <p class="eyebrow">SplitText · autoSplit, onSplit, aria, ignore, revert</p>
+      <h2>Ce qui fait qu'un texte découpé survit à la vraie vie.</h2>
+      <p class="intro">Découper du texte le fige : les lignes ont été calculées pour une largeur donnée et une police donnée. Redimensionnez la fenêtre, ou laissez une police web finir de charger, et le découpage ne correspond plus à rien. C'est le problème que ces options résolvent.</p>
+    </header>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-head">
+          <p class="card-title">autoSplit + onSplit · redimensionnez la fenêtre</p>
+          <button class="act" id="replayAuto" type="button">Rejouer</button>
+        </div>
+        <p class="demo-text small" id="t-auto">Redimensionnez cette fenêtre : les lignes sont recalculées pour la nouvelle largeur, et l'animation se rejoue sur le nouveau découpage. Sans <code>autoSplit</code>, les lignes resteraient coupées comme au premier rendu, et le masque trancherait au mauvais endroit.</p>
+        <pre class="code">SplitText.create("#t-auto", {
+  <b>type</b>: "lines", <b>mask</b>: "lines",
+  <b>autoSplit</b>: true,
+  <b>onSplit</b>(self) {
+    <span style="opacity:.7">// l'animation renvoyée est rejouée et nettoyée</span>
+    <span style="opacity:.7">// automatiquement à chaque redécoupage</span>
+    return gsap.from(self.lines, { yPercent: 100, stagger: .1 });
+  }
+});</pre>
+        <p class="card-note">Renvoyer l'animation depuis <code>onSplit</code> plutôt que la lancer à côté, c'est ce qui permet à SplitText de la tuer proprement avant de redécouper. Sans cela, chaque redimensionnement empile un tween de plus sur des éléments qui n'existent déjà plus.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <p class="card-title">aria &amp; ignore · rester lisible et cliquable</p>
+          <button class="act" id="revertBtn" type="button">Annuler le découpage</button>
+        </div>
+        <p class="demo-text small" id="t-aria">Un lecteur d'écran ne doit pas épeler les lettres une à une, et <a href="index.html">ce lien</a> doit rester un lien.</p>
+        <pre class="code"><b>aria</b>: "auto"      <span style="opacity:.7">→ pose l'aria-label sur la phrase entière</span>
+<b>ignore</b>: "a"       <span style="opacity:.7">→ laisse le lien intact, non découpé</span>
+self.<b>revert</b>()    <span style="opacity:.7">→ restitue le HTML d'origine</span></pre>
+        <p class="card-note" id="ariaNote"></p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page HTML autonome qui illustre tout ce que sait faire le plugin SplitText de GSAP, en quatre parties.
+
+Découper : la même phrase découpée par caractères, par mots et par lignes, avec un bouton qui affiche les boîtes produites par le plugin pour qu'on voie ce qu'il fabrique dans le DOM.
+
+Masquer : la même animation jouée côte à côte avec et sans l'option mask, pour montrer que sans masque le texte traverse l'espace au-dessus de sa ligne, et qu'avec masque il surgit de derrière un bord net.
+
+Cadencer : le même fondu sur les caractères avec quatre ordres de décalage — du début, du centre, de la fin, au hasard — puis un exemple avec propIndex, où le décalage est calculé en CSS à partir de la variable écrite par le plugin, sans JavaScript d'animation.
+
+Tenir : autoSplit avec onSplit qui renvoie son animation, pour que le texte se redécoupe au redimensionnement et que l'ancienne animation soit tuée proprement ; aria pour que la phrase reste lisible d'un lecteur d'écran ; ignore pour qu'un lien reste un lien ; revert pour rendre le HTML d'origine.
+
+Charge GSAP et SplitText depuis un CDN en version 3.13 ou supérieure, où le plugin est devenu gratuit. Affiche sous chaque démonstration la configuration exacte employée.</pre>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/SplitText.min.js"></script>
+<script>
+(function () {
+  if (!window.gsap || !window.SplitText) {
+    document.querySelector('main.content').innerHTML =
+      '<p class="unsupported">GSAP n\'a pas pu se charger (connexion nécessaire au premier chargement). Rechargez la page.</p>';
+    return;
+  }
+  gsap.registerPlugin(SplitText);
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Sous préférence de mouvement réduit, les déplacements deviennent de
+  // simples fondus : le découpage reste démontré, la translation disparaît.
+  var SHIFT = reduced ? 0 : 1;
+
+  var CLASSES = { charsClass: 'split-char', wordsClass: 'split-word', linesClass: 'split-line' };
+
+  /* ================= 1. DÉCOUPER ================= */
+  function initDecouper() {
+    var el = document.getElementById('t-decouper');
+    var code = document.getElementById('code-decouper');
+    var boxBtn = document.getElementById('boxToggle');
+    var buttons = document.querySelectorAll('#section-decouper [data-split]');
+    var split = null;
+
+    function run(kind) {
+      if (split) split.revert();
+
+      // "chars" implique "words" : les caractères doivent être regroupés
+      // dans un conteneur, sinon la ligne ne peut plus se couper aux mots.
+      var type = kind === 'chars' ? 'chars,words' : kind === 'words' ? 'words' : 'lines';
+      var conf = Object.assign({ type: type, aria: 'auto' }, CLASSES);
+      split = SplitText.create(el, conf);
+
+      var targets = split[kind];
+      gsap.from(targets, {
+        opacity: 0,
+        yPercent: 40 * SHIFT,
+        duration: 0.5,
+        ease: 'power3.out',
+        stagger: kind === 'chars' ? 0.018 : kind === 'words' ? 0.05 : 0.1
+      });
+
+      code.innerHTML = 'SplitText.create(el, { <b>type</b>: "' + type + '" });\n' +
+                       'gsap.from(split.<b>' + kind + '</b>, { opacity: 0, yPercent: 40 });\n' +
+                       '<span style="opacity:.7">→ ' + targets.length + ' élément' + (targets.length > 1 ? 's' : '') + ' produit' + (targets.length > 1 ? 's' : '') + '</span>';
+
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.split === kind)); });
+    }
+
+    buttons.forEach(function (b) { b.addEventListener('click', function () { run(b.dataset.split); }); });
+
+    boxBtn.addEventListener('click', function () {
+      var on = boxBtn.getAttribute('aria-pressed') !== 'true';
+      boxBtn.setAttribute('aria-pressed', String(on));
+      el.classList.toggle('show-boxes', on);
+      boxBtn.textContent = on ? 'Masquer les boîtes' : 'Montrer les boîtes';
+    });
+
+    run('chars');
+  }
+
+  /* ================= 2. MASQUER ================= */
+  function initMasquer() {
+    var plain = SplitText.create('#t-nomask', Object.assign({ type: 'lines', aria: 'auto' }, CLASSES));
+    var masked = SplitText.create('#t-mask', Object.assign({ type: 'lines', mask: 'lines', aria: 'auto' }, CLASSES));
+
+    function play() {
+      gsap.from(plain.lines, { yPercent: 100 * SHIFT, opacity: reduced ? 0 : 1, duration: 0.8, ease: 'power3.out', stagger: 0.12 });
+      gsap.from(masked.lines, { yPercent: 100 * SHIFT, opacity: reduced ? 0 : 1, duration: 0.8, ease: 'power3.out', stagger: 0.12 });
+    }
+    document.getElementById('replayMask').addEventListener('click', play);
+    play();
+  }
+
+  /* ================= 3. CADENCER ================= */
+  function initCadencer() {
+    var stagger = SplitText.create('#t-stagger', Object.assign({ type: 'chars,words', aria: 'auto' }, CLASSES));
+    var code = document.getElementById('code-stagger');
+    var buttons = document.querySelectorAll('#section-cadencer [data-from]');
+
+    function play(from) {
+      gsap.from(stagger.chars, {
+        opacity: 0,
+        yPercent: 60 * SHIFT,
+        duration: 0.5,
+        ease: 'power3.out',
+        // L'objet stagger porte l'ordre : « from » désigne le point de
+        // départ de la cascade, pas la valeur animée.
+        stagger: { each: 0.02, from: from }
+      });
+      code.innerHTML = 'stagger: { each: 0.02, <b>from</b>: "' + from + '" }';
+      buttons.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.from === from)); });
+    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { play(b.dataset.from); }); });
+    play('start');
+
+    // propIndex : le plugin écrit --char sur chaque caractère, et c'est la
+    // feuille de style qui en tire le décalage. Aucune animation en JS.
+    var propSplit = SplitText.create('#t-prop', Object.assign({ type: 'chars,words', propIndex: true, aria: 'auto' }, CLASSES));
+    function replayCss() {
+      propSplit.chars.forEach(function (c) {
+        c.style.animation = 'none';
+        void c.offsetWidth;              // force le navigateur à repartir de zéro
+        c.style.animation = '';
+      });
+    }
+    document.getElementById('replayProp').addEventListener('click', replayCss);
+  }
+
+  /* ================= 4. TENIR ================= */
+  function initTenir() {
+    // autoSplit redécoupe quand la police finit de charger ou que la
+    // largeur change ; l'animation renvoyée par onSplit est tuée puis
+    // rejouée à chaque fois, sans empilement.
+    var auto = SplitText.create('#t-auto', Object.assign({
+      type: 'lines',
+      mask: 'lines',
+      autoSplit: true,
+      aria: 'auto',
+      onSplit: function (self) {
+        return gsap.from(self.lines, {
+          yPercent: 100 * SHIFT,
+          opacity: reduced ? 0 : 1,
+          duration: 0.7,
+          ease: 'power3.out',
+          stagger: 0.08
+        });
+      }
+    }, CLASSES));
+
+    document.getElementById('replayAuto').addEventListener('click', function () {
+      gsap.from(auto.lines, { yPercent: 100 * SHIFT, opacity: reduced ? 0 : 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 });
+    });
+
+    var ariaEl = document.getElementById('t-aria');
+    var note = document.getElementById('ariaNote');
+    var revertBtn = document.getElementById('revertBtn');
+    var ariaSplit = null;
+
+    function describe() {
+      if (ariaSplit) {
+        var link = ariaEl.querySelector('a');
+        note.innerHTML = 'Découpé en <b>' + ariaSplit.chars.length + ' caractères</b>. ' +
+          'Nom accessible annoncé : « ' + (ariaEl.getAttribute('aria-label') || '—') + ' ». ' +
+          'Le lien est ' + (link && !link.querySelector('.split-char') ? 'resté intact' : 'découpé') + '.';
+      } else {
+        note.innerHTML = 'Découpage annulé : le HTML d\'origine est revenu, sans un seul élément ajouté.';
+      }
+    }
+
+    function split() {
+      ariaSplit = SplitText.create(ariaEl, Object.assign({
+        type: 'chars,words',
+        aria: 'auto',
+        ignore: 'a'          // le lien garde sa structure, donc son rôle
+      }, CLASSES));
+      gsap.from(ariaSplit.chars, { opacity: 0, duration: 0.4, stagger: 0.012, ease: 'none' });
+      revertBtn.textContent = 'Annuler le découpage';
+      describe();
+    }
+
+    revertBtn.addEventListener('click', function () {
+      if (ariaSplit) {
+        ariaSplit.revert();
+        ariaSplit = null;
+        revertBtn.textContent = 'Redécouper';
+        describe();
+      } else {
+        split();
+      }
+    });
+
+    split();
+  }
+
+  /* ================= Bascule des sections ================= */
+  var sections = {
+    decouper: { el: document.getElementById('section-decouper'), init: initDecouper },
+    masquer:  { el: document.getElementById('section-masquer'),  init: initMasquer },
+    cadencer: { el: document.getElementById('section-cadencer'), init: initCadencer },
+    tenir:    { el: document.getElementById('section-tenir'),    init: initTenir }
+  };
+  var subLinks = document.querySelectorAll('.side-sub a[data-target]');
+  var current = null;
+
+  function show(name) {
+    if (!sections[name] || name === current) return;
+    if (current) sections[current].el.hidden = true;
+    var next = sections[name];
+    next.el.hidden = false;
+    // Le découpage en lignes dépend de la largeur rendue : initialiser une
+    // section encore masquée donnerait des lignes calculées sur zéro pixel.
+    if (!next.initialized) { next.init(); next.initialized = true; }
+    subLinks.forEach(function (a) {
+      if (a.dataset.target === name) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    current = name;
+  }
+
+  subLinks.forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      show(a.dataset.target);
+      history.replaceState(null, '', '#' + a.dataset.target);
+    });
+  });
+
+  var start = (location.hash || '').replace('#', '');
+  var initial = sections[start] ? start : 'decouper';
+  Object.keys(sections).forEach(function (n) { sections[n].el.hidden = true; });
+  show(initial);
+
+  window.addEventListener('hashchange', function () {
+    var n = (location.hash || '').replace('#', '');
+    if (sections[n]) show(n);
+  });
+})();
+</script>
+
+<style>
+  /* L'animation que propIndex pilote : le délai vient de la variable CSS
+     écrite par SplitText, pas d'un tween. */
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(0.5em); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #t-prop .split-char {
+    display: inline-block;
+    animation: rise 0.5s backwards cubic-bezier(0.2, 0, 0, 1);
+    animation-delay: calc(var(--char) * 28ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #t-prop .split-char { animation-name: fadeOnly; }
+    @keyframes fadeOnly { from { opacity: 0; } to { opacity: 1; } }
+  }
+</style>
+
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) { panel.hidden = !open; tab.setAttribute('aria-expanded', String(open)); }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch(function () { fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+    copyBtn.textContent = 'Copié';
+    setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1600);
+  });
+})();
+</script>
+</body>
+</html>
