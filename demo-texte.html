@@ -41,33 +41,43 @@
 
   .sidebar {
     flex: 0 0 auto;
-    width: 168px;
-    padding: 22px 16px;
+    width: 216px;
+    padding: clamp(20px, 3vw, 30px) 22px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 26px;
     border-right: 1px solid var(--line);
-    font-family: var(--font-mono);
   }
   .home-link {
+    font-family: var(--font-mono);
     font-size: 11px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-dim);
     text-decoration: none;
   }
   .home-link:hover { color: var(--ink); }
-  .side-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 12px;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+  .side-nav-title {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin: 0 0 10px;
   }
-  .side-nav a { color: var(--ink-dim); text-decoration: none; padding: 7px 8px; border-radius: 6px; }
-  .side-nav a:hover { color: var(--ink); }
-  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--surface); font-weight: 600; }
+  .side-nav { display: flex; flex-direction: column; }
+  .side-nav a {
+    display: block;
+    border-top: 1px solid var(--line);
+    padding: 11px 0;
+    font-size: 14.5px;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition-property: color, border-color, padding-inline-start;
+    transition-duration: 200ms;
+  }
+  .side-nav a:last-child { border-bottom: 1px solid var(--line); }
+  .side-nav a:hover { color: var(--ink); border-top-color: var(--ink); padding-inline-start: 9px; }
+  .side-nav a:last-child:hover { border-bottom-color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); font-weight: 500; }
 
   main.content {
     flex: 1;
@@ -220,8 +230,14 @@
 
   @media (max-width: 720px) {
     body { flex-direction: column; }
-    .sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
-    .side-nav { flex-direction: row; flex-wrap: wrap; }
+    .sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); gap: 14px; }
+    .side-nav-title { display: none; }
+    /* En rangée, les filets horizontaux se lisent comme des barres : on les
+       retire et les entrées redeviennent de simples pastilles. */
+    .side-nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+    .side-nav a,
+    .side-nav a:last-child { border: 0; padding: 5px 9px; font-size: 13px; }
+    .side-nav a:hover { padding-inline-start: 9px; }
   }
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -229,6 +245,7 @@
 <body>
 <aside class="sidebar">
   <a class="home-link" href="index.html">&larr; Accueil</a>
+  <p class="side-nav-title">Démos</p>
   <nav class="side-nav">
     <a href="demo-voix.html">Voix</a>
     <a href="demo-geste.html">Geste</a>

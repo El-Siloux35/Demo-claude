@@ -6,6 +6,8 @@
 <title>Objet 3D</title>
 <style>
   :root {
+    --font-display: 'Neue Haas Grotesk Display Pro', 'NHaasGroteskDSPro', 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --ground: #ffffff;
     --ink: #111111;
     --ink-dim: #6e6e6e;
@@ -35,49 +37,49 @@
     margin: 0;
     background: var(--ground);
     color: var(--ink);
-    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: var(--font-display);
     padding-left: 190px;
   }
 
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 190px;
-    height: 100vh;
-    z-index: 1000;
-    padding: 22px 18px;
+    flex: 0 0 auto;
+    width: 216px;
+    padding: clamp(20px, 3vw, 30px) 22px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 26px;
     border-right: 1px solid var(--line);
-    font-family: 'IBM Plex Mono', monospace;
-    background: var(--ground);
   }
   .home-link {
+    font-family: var(--font-mono);
     font-size: 11px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
     color: var(--ink-dim);
     text-decoration: none;
   }
   .home-link:hover { color: var(--ink); }
-  .side-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 12px;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
+  .side-nav-title {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    margin: 0 0 10px;
   }
+  .side-nav { display: flex; flex-direction: column; }
   .side-nav a {
+    display: block;
+    border-top: 1px solid var(--line);
+    padding: 11px 0;
+    font-size: 14.5px;
     color: var(--ink-dim);
     text-decoration: none;
-    padding: 7px 8px;
-    border-radius: 6px;
+    transition-property: color, border-color, padding-inline-start;
+    transition-duration: 200ms;
   }
-  .side-nav a:hover { color: var(--ink); }
-  .side-nav a[aria-current="page"] { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); font-weight: 600; }
+  .side-nav a:last-child { border-bottom: 1px solid var(--line); }
+  .side-nav a:hover { color: var(--ink); border-top-color: var(--ink); padding-inline-start: 9px; }
+  .side-nav a:last-child:hover { border-bottom-color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); font-weight: 500; }
 
   .scroll-track {
     position: relative;
@@ -123,8 +125,8 @@
     margin: 0 0 8px;
   }
   header.overlay h1 {
-    font-family: 'Calistoga', Georgia, serif;
-    font-weight: 400;
+    font-family: var(--font-display);
+    font-weight: 500;
     font-size: clamp(19px, 3vw, 26px);
     margin: 0 auto 8px;
     max-width: 560px;
@@ -162,7 +164,7 @@
     background: var(--ink);
   }
   .hud .readout {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -189,7 +191,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.02em;
     color: #ffffff;
@@ -228,7 +230,7 @@
   }
   .prompt-panel-head h2 {
     margin: 0;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -252,7 +254,7 @@
     margin: 0;
     padding: 14px;
     overflow: auto;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.65;
     white-space: pre-wrap;
@@ -260,11 +262,12 @@
   }
 </style>
 
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Calistoga&family=Manrope:wght@500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 </head>
 <body>
 <aside class="sidebar">
   <a class="home-link" href="index.html">&larr; Accueil</a>
+  <p class="side-nav-title">Démos</p>
   <nav class="side-nav">
     <a href="demo-voix.html">Voix</a>
     <a href="demo-geste.html">Geste</a>

@@ -66,9 +66,6 @@
     position: fixed;
     inset: 0;
     z-index: 3;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr auto;
     padding: clamp(22px, 3.4vw, 52px);
     /* Transparent to the pointer, so hovering the copy zone and steering the
        3D both keep working straight through the text. */
@@ -104,7 +101,7 @@
 
   /* --- Copy ---------------------------------------------------------- */
 
-  .intro { grid-column: 1; grid-row: 1; max-width: 36rem; }
+  .intro { max-width: 36rem; }
 
   .eyebrow {
     font-family: var(--font-mono);
@@ -134,44 +131,69 @@
     text-wrap: pretty;
   }
 
-  .index {
-    grid-column: 2;
-    grid-row: 3;
-    align-self: end;
-    justify-self: end;
-    width: min(30rem, 100%);
+  /* Le seul élément cliquable du héros : il conduit à la liste. */
+  .cta {
     pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 26px;
+    padding: 11px 18px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 450;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink);
+    transition: background 200ms ease, color 200ms ease;
   }
-  .index h2 {
-    font-size: 21px;
+  .cta:hover { background: var(--ink); color: var(--ground); }
+  .cta svg { display: block; }
+
+  /* La liste vit désormais dans la section sombre, où le bouton conduit. */
+  .demos { width: 100%; max-width: 46rem; }
+  .demos h2 {
+    font-size: clamp(21px, 3vw, 27px);
     font-weight: 500;
-    letter-spacing: -0.015em;
-    margin: 0 0 14px;
+    letter-spacing: -0.02em;
+    margin: 0 0 18px;
   }
-  .index ul { list-style: none; margin: 0; padding: 0; }
-  .index a {
+  .demos ul { list-style: none; margin: 0; padding: 0; }
+  .demos a {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
     gap: 16px;
-    border-top: 1px solid var(--rule);
-    padding: 13px 0;
+    border-top: 1px solid #2a2a2a;
+    padding: 14px 0;
     text-decoration: none;
     color: inherit;
     transition-property: border-color, padding-inline-start;
     transition-duration: 200ms;
   }
-  .index li:last-child a { border-bottom: 1px solid var(--rule); }
-  .index a:hover { border-top-color: var(--ink); padding-inline-start: 10px; }
-  .index li:last-child a:hover { border-bottom-color: var(--ink); }
-  .index .name { font-size: 16px; }
-  .index .meta {
+  .demos li:last-child a { border-bottom: 1px solid #2a2a2a; }
+  .demos a:hover { border-top-color: #f2f2f2; padding-inline-start: 10px; }
+  .demos li:last-child a:hover { border-bottom-color: #f2f2f2; }
+  .demos .name { font-size: 16.5px; }
+  .demos .meta {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 450;
     letter-spacing: 0.12em;
-    color: var(--ink-dim);
+    color: #8f8f8f;
     white-space: nowrap;
+  }
+  .demos .eyebrow-dark {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 450;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #8f8f8f;
+    margin: 0 0 20px;
   }
 
   /* The prompt pill lives inside the hover zone, so it inherits its
@@ -248,14 +270,6 @@
     display: flex;
     align-items: center;
   }
-  #next .placeholder {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 450;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #6b6b6b;
-  }
 
   /* The lagging cursor, on top of everything. Difference blending means one
      element reads correctly on the white page and on the black columns, with
@@ -287,7 +301,6 @@
     }
     h1 { white-space: normal; font-size: clamp(28px, 8vw, 40px); }
     .intro { max-width: none; }
-    .index { width: 100%; margin-top: 58vh; }
     /* A full-screen button has nothing to offer without hover, and sitting
        fixed above the flow it would swallow both the links and the scroll. */
     .hotspot { display: none; }
@@ -325,21 +338,12 @@
     <p class="eyebrow">Démo Claude Code</p>
     <h1>Huit démos d'interfaces.</h1>
     <p class="tagline">Contrôle vocal, gestuel, captation du regard, 3D au scroll et animation. Huit pages autonomes, sans installation ni compilation.</p>
+    <a class="cta" href="#next">
+      Voir les démos
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+    </a>
   </div>
 
-  <nav class="index" aria-label="Les huit démos">
-    <h2>Démos</h2>
-    <ul>
-      <li><a href="demo-voix.html"><span class="name">Voix</span><span class="meta">( MICRO )</span></a></li>
-      <li><a href="demo-geste.html"><span class="name">Geste</span><span class="meta">( CAMÉRA )</span></a></li>
-      <li><a href="demo-regard.html"><span class="name">Regard</span><span class="meta">( CAMÉRA )</span></a></li>
-      <li><a href="demo-carte.html"><span class="name">Carte</span><span class="meta">( CAMÉRA )</span></a></li>
-      <li><a href="demo-carrousel.html"><span class="name">Carrousel</span><span class="meta">( LIBRE )</span></a></li>
-      <li><a href="demo-objet.html"><span class="name">Objet 3D</span><span class="meta">( LIBRE )</span></a></li>
-      <li><a href="demo-texte.html"><span class="name">Animation texte</span><span class="meta">( LIBRE )</span></a></li>
-      <li><a href="demo-tambour.html"><span class="name">Tambour</span><span class="meta">( LIBRE )</span></a></li>
-    </ul>
-  </nav>
 </div>
 
 <div class="wipe" aria-hidden="true">
@@ -353,7 +357,20 @@
 <div id="corridor"></div>
 
 <section id="next">
-  <p class="placeholder">Section suivante — contenu à venir</p>
+  <div class="demos">
+    <p class="eyebrow-dark">Les huit démos</p>
+    <h2>À ouvrir sur ordinateur.</h2>
+    <ul>
+      <li><a href="demo-voix.html"><span class="name">Voix</span><span class="meta">( MICRO )</span></a></li>
+      <li><a href="demo-geste.html"><span class="name">Geste</span><span class="meta">( CAMÉRA )</span></a></li>
+      <li><a href="demo-regard.html"><span class="name">Regard</span><span class="meta">( CAMÉRA )</span></a></li>
+      <li><a href="demo-carte.html"><span class="name">Carte</span><span class="meta">( CAMÉRA )</span></a></li>
+      <li><a href="demo-carrousel.html"><span class="name">Carrousel</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-objet.html"><span class="name">Objet 3D</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-texte.html"><span class="name">Animation texte</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-tambour.html"><span class="name">Tambour</span><span class="meta">( LIBRE )</span></a></li>
+    </ul>
+  </div>
 </section>
 
 <!-- The prompt handed to the visitor. Kept in the DOM rather than in a JS
@@ -727,13 +744,12 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       const distH = objectRadius / Math.sin(hFov / 2);
       const fitDist = Math.max(0.5, Math.max(distV, distH) * 1.95);
 
-      // Sit the model in the left half rather than dead centre: the index
-      // occupies the bottom right, and centring put the two on top of each
-      // other on any window that is short. Expressed as a share of the
-      // visible width at the model's depth, so it holds at every size.
+      // Décalé vers la droite : l'accroche occupe le coin haut-gauche, et
+      // centrer le modèle le faisait passer dessous. Exprimé en part de la
+      // largeur visible à sa profondeur, donc valable à toute taille.
       const halfWidth = Math.tan(hFov / 2) * fitDist;
       const wide = window.innerWidth > 860;
-      pivot.position.x = wide ? -halfWidth * 0.24 : 0;
+      pivot.position.x = wide ? halfWidth * 0.2 : 0;
 
       camera.position.set(0, 0, fitDist);
       camera.near = Math.max(0.01, fitDist - objectRadius * 8);
