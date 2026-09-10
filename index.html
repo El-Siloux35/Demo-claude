@@ -270,7 +270,12 @@
   /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
      the finished line stays on screen instead of being covered by the next
      section the instant it lands. */
-  #corridor { height: 300vh; }
+  /* 420vh de couloir pour 300vh de timeline. Les 120vh restants ne jouent
+     rien : c'est la pause qui laisse le temps de lire la phrase avant que
+     la section suivante ne monte la recouvrir. Séparer la longueur du
+     couloir de la plage animée est ce qui permet de régler ce temps de
+     lecture sans retoucher une seule animation. */
+  #corridor { height: 420vh; }
 
   /* Above the columns, so the section that follows scrolls over the black
      they leave behind rather than under it. */
@@ -890,6 +895,8 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         scrollTrigger: {
           trigger: '#corridor',
           start: 'top top',
+          // La plage animée s'arrête avant la fin du couloir : le reste est
+          // du temps mort, volontairement.
           end: '+=300%',
           scrub: 1
         }
