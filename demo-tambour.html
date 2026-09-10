@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tambour</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --surface: #f0f0f0;
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --accent: #161616;
+    --line: rgba(17,17,17,0.14);
+    --font-display: 'Neue Haas Grotesk Display Pro', 'NHaasGroteskDSPro', 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --surface: #171717;
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --accent: #ececec;
+      --line: rgba(242,242,242,0.16);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    display: flex;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .sidebar {
+    flex: 0 0 auto;
+    width: 168px;
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid var(--line);
+    font-family: var(--font-mono);
+  }
+  .home-link {
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 12px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .side-nav a {
+    color: var(--ink-dim);
+    text-decoration: none;
+    padding: 7px 8px;
+    border-radius: 6px;
+  }
+  .side-nav a:hover { color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); background: var(--surface); font-weight: 600; }
+
+  main.content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(18px, 4vw, 40px) clamp(18px, 4vw, 40px) 12px;
+    text-align: center;
+  }
+
+  header { max-width: 660px; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+
+  h1 {
+    font-weight: 500;
+    font-size: clamp(20px, 3vw, 27px);
+    letter-spacing: -0.02em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+
+  .intro {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 0;
+    max-width: 60ch;
+  }
+
+  .stage {
+    width: 100%;
+    flex: 1;
+    min-height: 320px;
+    margin-top: 14px;
+    position: relative;
+    touch-action: none;
+    cursor: grab;
+  }
+  .stage:active { cursor: grabbing; }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+
+  .readout {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin: 6px 0 0;
+  }
+  .readout b { color: var(--ink); font-weight: 500; }
+
+  .hint {
+    font-size: 12px;
+    color: var(--ink-dim);
+    margin: 6px 0 4px;
+  }
+
+  .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 20px; }
+
+  /* --- Encart prompt, convention partagée par les démos --------------- */
+  .prompt-tab {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #000000;
+    color: #f2f2f2;
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    z-index: 21;
+    width: min(520px, calc(100vw - 32px));
+    max-height: min(70vh, 560px);
+    overflow: auto;
+    background: #000000;
+    color: #e8e8e8;
+    border-radius: 12px;
+    padding: 14px 16px 18px;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .prompt-panel-head h2 {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin: 0;
+    color: #9a9a9a;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    background: #1a1a1a;
+    color: #e8e8e8;
+    border: 0;
+    border-radius: 7px;
+    padding: 5px 10px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 720px) {
+    body { flex-direction: column; }
+    .sidebar { width: 100%; border-right: 0; border-bottom: 1px solid var(--line); }
+    .side-nav { flex-direction: row; flex-wrap: wrap; }
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-animations.html">Animations</a>
+    <a href="demo-tambour.html">Tambour</a>
+  </nav>
+</aside>
+<script>
+  (function () {
+    var here = location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.side-nav > a').forEach(function (a) {
+      if (a.getAttribute('href') === here) a.setAttribute('aria-current', 'page');
+    });
+  })();
+</script>
+
+<main class="content">
+  <header>
+    <p class="eyebrow">Démo : tambour d'images en 3D</p>
+    <h1>On regarde l'intérieur du cylindre.</h1>
+    <p class="intro">Les images ne sont pas posées à plat sur un cercle : chaque panneau est une portion de cylindre, courbée à la géométrie, si bien que les bords se rejoignent sans couture. La paroi proche est écartée du rendu, et l'on voit donc la face interne de la paroi opposée. Faites tourner le tambour ; il s'arrête toujours sur une image.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="gl"></canvas>
+  </div>
+
+  <p class="readout" id="readout"><b>01</b> / 07 &middot; Voix</p>
+  <p class="hint">Glissez, ou utilisez la molette. Cliquez pour ouvrir la démo au centre.</p>
+</main>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page HTML autonome où un tambour d'images tourne en 3D, sans aucune image externe.
+
+Utilise Three.js. Ne pose pas les images à plat sur un cercle : construis chaque panneau comme une portion de cylindre en déplaçant les sommets d'un plan segmenté sur l'arc, de sorte que les panneaux voisins se rejoignent sans couture.
+
+Rends les faces internes uniquement (side: BackSide) : la paroi proche est ainsi écartée du rendu et l'on voit la face interne de la paroi opposée, comme si l'on regardait dans un tambour. Compense l'inversion horizontale que cela provoque en retournant la texture plutôt qu'en retournant la géométrie.
+
+Fabrique chaque image dans un canvas 2D à la volée, pour que la page reste autonome.
+
+Le tambour se fait glisser à la souris ou au doigt et garde son élan. Quand l'élan retombe sous un seuil, il rejoint l'image la plus proche par interpolation, et s'arrête donc toujours aligné. Déduis l'image centrée de l'angle plutôt que par lancer de rayon.
+
+Ajoute un second anneau, plus petit et plus haut, tournant en sens inverse, purement décoratif.
+
+Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var canvas = document.getElementById('gl');
+  var readout = document.getElementById('readout');
+
+  if (!window.THREE) {
+    stage.innerHTML = '<p class="unsupported">La bibliothèque 3D n\'a pas pu se charger (connexion nécessaire au premier chargement). Rechargez la page.</p>';
+    return;
+  }
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Les sept démos, doublées pour que le tambour reste dense et qu'on en voie
+  // toujours plusieurs à la fois.
+  var DEMOS = [
+    { n: '01', title: 'Voix',       req: 'Micro',   href: 'demo-voix.html' },
+    { n: '02', title: 'Geste',      req: 'Caméra',  href: 'demo-geste.html' },
+    { n: '03', title: 'Regard',     req: 'Caméra',  href: 'demo-regard.html' },
+    { n: '04', title: 'Carte',      req: 'Caméra',  href: 'demo-carte.html' },
+    { n: '05', title: 'Carrousel',  req: 'Libre',   href: 'demo-carrousel.html' },
+    { n: '06', title: 'Objet 3D',   req: 'Libre',   href: 'demo-objet.html' },
+    { n: '07', title: 'Animations', req: 'Libre',   href: 'demo-animations.html' }
+  ];
+  var REPEATS = 2;
+  var PANELS = DEMOS.length * REPEATS;
+
+  /* ------------------------------------------------------------------
+     Les affiches sont dessinées à la volée dans un canvas 2D : la page
+     reste autonome, sans un seul fichier image à charger.
+     ------------------------------------------------------------------ */
+  function poster(demo, index) {
+    var c = document.createElement('canvas');
+    c.width = 512; c.height = 660;
+    var g = c.getContext('2d');
+
+    g.fillStyle = '#0b0b0b';
+    g.fillRect(0, 0, 512, 660);
+
+    // Un motif par démo, tracé aux primitives : chaque affiche est
+    // reconnaissable sans qu'aucune ressource ne soit téléchargée.
+    g.save();
+    g.translate(256, 300);
+    g.strokeStyle = '#d8d8d8';
+    g.fillStyle = '#d8d8d8';
+    g.lineWidth = 3;
+
+    if (demo.title === 'Voix') {
+      for (var i = -7; i <= 7; i++) {
+        var h = 30 + Math.abs(Math.sin(i * 1.1)) * 130;
+        g.fillRect(i * 16 - 4, -h / 2, 8, h);
+      }
+    } else if (demo.title === 'Geste') {
+      var pts = [[-90, 60], [-40, -30], [10, 20], [50, -70], [95, -10]];
+      g.beginPath();
+      pts.forEach(function (p, k) { k ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); });
+      g.stroke();
+      pts.forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], 9, 0, 6.284); g.fill(); });
+    } else if (demo.title === 'Regard') {
+      [130, 96, 62].forEach(function (r) { g.beginPath(); g.arc(0, 0, r, 0, 6.284); g.stroke(); });
+      g.beginPath(); g.arc(0, 0, 26, 0, 6.284); g.fill();
+    } else if (demo.title === 'Carte') {
+      for (var x = -2; x <= 2; x++) {
+        for (var y = -2; y <= 2; y++) {
+          if (x === 1 && y === -1) { g.fillRect(x * 54 - 22, y * 54 - 22, 44, 44); }
+          else { g.strokeRect(x * 54 - 22, y * 54 - 22, 44, 44); }
+        }
+      }
+    } else if (demo.title === 'Carrousel') {
+      [[-70, 26, 0.72], [0, 0, 1], [70, 26, 0.72]].forEach(function (o) {
+        g.save(); g.translate(o[0], o[1]); g.scale(o[2], o[2]);
+        g.globalAlpha = o[2] === 1 ? 1 : 0.45;
+        g.strokeRect(-52, -78, 104, 156);
+        g.restore();
+      });
+    } else if (demo.title === 'Objet 3D') {
+      var s = 74, d = 40;
+      g.strokeRect(-s, -s, s * 1.6, s * 1.6);
+      g.strokeRect(-s + d, -s - d, s * 1.6, s * 1.6);
+      [[-s, -s], [-s + s * 1.6, -s], [-s, -s + s * 1.6], [-s + s * 1.6, -s + s * 1.6]].forEach(function (p) {
+        g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0] + d, p[1] - d); g.stroke();
+      });
+    } else {
+      g.beginPath();
+      for (var t = 0; t <= 100; t++) {
+        var u = t / 100;
+        var e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+        var px = -120 + u * 240, py = 90 - e * 180;
+        t ? g.lineTo(px, py) : g.moveTo(px, py);
+      }
+      g.stroke();
+    }
+    g.restore();
+
+    g.fillStyle = '#f2f2f2';
+    g.font = '500 46px "Inter Tight", Helvetica, Arial, sans-serif';
+    g.textAlign = 'center';
+    g.fillText(demo.title, 256, 545);
+
+    g.fillStyle = '#8c8c8c';
+    g.font = '500 20px "IBM Plex Mono", monospace';
+    g.fillText(demo.n + '  ·  ' + demo.req.toUpperCase(), 256, 585);
+
+    g.strokeStyle = 'rgba(242,242,242,0.16)';
+    g.lineWidth = 2;
+    g.strokeRect(1, 1, 510, 658);
+
+    var tex = new THREE.CanvasTexture(c);
+    // La paroi est rendue par sa face interne, ce qui inverse l'image
+    // horizontalement. On la retourne ici plutôt que de retourner la
+    // géométrie, qui devrait alors être reconstruite.
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.repeat.x = -1;
+    tex.offset.x = 1;
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  /* ------------------------------------------------------------------
+     Un panneau n'est pas un plan posé sur un cercle : c'est un plan dont
+     les sommets ont été déplacés sur l'arc. Les bords de deux panneaux
+     voisins coïncident donc exactement, sans couture visible.
+     ------------------------------------------------------------------ */
+  function curvedPanel(radius, arcAngle, height, segments) {
+    var g = new THREE.PlaneGeometry(1, height, segments, 1);
+    var pos = g.attributes.position;
+    for (var i = 0; i < pos.count; i++) {
+      var a = pos.getX(i) * arcAngle;
+      pos.setX(i, Math.sin(a) * radius);
+      pos.setZ(i, Math.cos(a) * radius);
+    }
+    pos.needsUpdate = true;
+    g.computeVertexNormals();
+    return g;
+  }
+
+  var scene = new THREE.Scene();
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+  renderer.setClearColor(0x000000, 0);
+
+  var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 200);
+  camera.position.set(0, 1.4, 15.5);
+  camera.lookAt(0, 0, 0);
+
+  var drum = new THREE.Group();
+  scene.add(drum);
+
+  var RADIUS = 7.2;
+  var ARC = (Math.PI * 2) / PANELS;
+  var textures = DEMOS.map(function (d, i) { return poster(d, i); });
+
+  for (var i = 0; i < PANELS; i++) {
+    var mesh = new THREE.Mesh(
+      curvedPanel(RADIUS, ARC, 4.6, 24),
+      new THREE.MeshBasicMaterial({
+        map: textures[i % DEMOS.length],
+        // Seule la face interne est rendue : la paroi la plus proche de la
+        // caméra disparaît et l'on voit l'intérieur du tambour.
+        side: THREE.BackSide
+      })
+    );
+    mesh.rotation.y = i * ARC;
+    drum.add(mesh);
+  }
+
+  // Un second anneau, plus haut et plus petit, tournant en sens inverse.
+  // Purement décoratif : il donne au tambour son épaisseur.
+  var ring = new THREE.Group();
+  ring.position.y = 3.9;
+  scene.add(ring);
+  for (var j = 0; j < PANELS; j++) {
+    var small = new THREE.Mesh(
+      curvedPanel(RADIUS * 0.82, ARC, 1.9, 20),
+      new THREE.MeshBasicMaterial({
+        map: textures[(j + 3) % DEMOS.length],
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: 0.3
+      })
+    );
+    small.rotation.y = j * ARC;
+    ring.add(small);
+  }
+
+  function resize() {
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  /* ------------------------------------------------------------------
+     Rotation : glisser ou molette donnent de la vitesse, le frottement la
+     dissipe, puis le tambour rejoint l'image la plus proche.
+     ------------------------------------------------------------------ */
+  var angle = 0;
+  var velocity = 0;
+  var dragging = false;
+  var lastX = 0;
+
+  stage.addEventListener('pointerdown', function (e) {
+    dragging = true;
+    lastX = e.clientX;
+    velocity = 0;
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX;
+    lastX = e.clientX;
+    velocity = dx * 0.0045;
+    angle += velocity;
+  });
+  function endDrag() { dragging = false; }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+
+  stage.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    velocity += (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * 0.00035;
+  }, { passive: false });
+
+  // L'image centrée se déduit de l'angle : pas besoin de lancer un rayon
+  // dans la scène pour savoir laquelle est en face.
+  function centredIndex() {
+    var steps = Math.round(-angle / ARC);
+    var k = ((steps % PANELS) + PANELS) % PANELS;
+    return k % DEMOS.length;
+  }
+
+  var shown = -1;
+  function updateReadout() {
+    var k = centredIndex();
+    if (k === shown) return;
+    shown = k;
+    var d = DEMOS[k];
+    readout.innerHTML = '<b>' + d.n + '</b> / 07 &middot; ' + d.title;
+  }
+
+  stage.addEventListener('click', function () {
+    if (Math.abs(velocity) > 0.002) return;   // un clic, pas la fin d'un glissé
+    window.location.href = DEMOS[centredIndex()].href;
+  });
+
+  function frame() {
+    requestAnimationFrame(frame);
+
+    if (!dragging) {
+      velocity *= 0.94;
+      if (Math.abs(velocity) < 0.0008) {
+        velocity = 0;
+        // Aimantation : le tambour rejoint le multiple d'arc le plus proche,
+        // donc il s'immobilise toujours sur une image, jamais entre deux.
+        var target = Math.round(angle / ARC) * ARC;
+        angle += (target - angle) * 0.1;
+      } else {
+        angle += velocity;
+      }
+      if (!reduced && velocity === 0) angle += 0.0004;   // dérive au repos
+    }
+
+    drum.rotation.y = angle;
+    ring.rotation.y = -angle * 0.6;
+    updateReadout();
+    renderer.render(scene, camera);
+  }
+  frame();
+})();
+</script>
+
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) {
+    panel.hidden = !open;
+    tab.setAttribute('aria-expanded', String(open));
+  }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch(function () { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+    copyBtn.textContent = 'Copié';
+    setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1600);
+  });
+})();
+</script>
+</body>
+</html>
