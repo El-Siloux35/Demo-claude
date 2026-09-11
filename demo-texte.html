@@ -160,6 +160,9 @@
     padding: 16px 16px 14px;
     cursor: pointer;
     transition: border-color 160ms ease;
+    /* Les effets qui partent de loin entrent par le bord de la carte au lieu
+       de déborder sur les voisines. */
+    overflow: hidden;
   }
   .anim:hover, .anim:focus-visible { border-color: var(--ink); }
 
@@ -410,22 +413,23 @@ Charge GSAP et SplitText en version 3.13 ou supérieure, où le plugin est deven
       play: function (s) { return gsap.from(s.chars, { opacity: 0, y: -55, duration: 1.1, ease: 'elastic.out(1, 0.45)', stagger: 0.028 }); }
     },
     {
-      name: 'Scatter in',
-      text: 'Chaque mot arrive de sa propre direction, sous son propre angle.',
-      note: 'Le piège est ici : écrite en valeur, une fonction aléatoire n\'est évaluée qu\'une fois et tous les mots reçoivent le même tirage. Écrite en fonction, elle est rappelée pour chaque élément, et chacun obtient le sien. C\'est la différence entre une phrase qui glisse en bloc et une phrase qui se rassemble.',
+      name: 'Random transform in',
+      text: 'Les mots se rassemblent.',
+      note: 'À ne pas confondre avec « random reveal », qui tire au sort l\'ORDRE d\'arrivée : ici c\'est la POSITION, l\'angle et l\'échelle de départ qui sont tirés, mot par mot. Le piège tient en une paire de parenthèses : écrite en valeur, une fonction aléatoire n\'est évaluée qu\'une fois et tous les mots reçoivent le même tirage ; écrite en fonction, elle est rappelée pour chacun.',
       split: { type: 'words' },
       play: function (s) {
         return gsap.from(s.words, {
           opacity: 0,
           // Des fonctions, et non des valeurs : GSAP les rappelle pour chaque
-          // mot, qui reçoit donc son propre tirage.
-          x: function () { return gsap.utils.random(-140, 140); },
-          y: function () { return gsap.utils.random(-90, 90); },
-          rotate: function () { return gsap.utils.random(-50, 50); },
-          scale: function () { return gsap.utils.random(0.4, 1.5); },
+          // mot, qui reçoit donc son propre tirage. Les écarts restent
+          // mesurés, à l'échelle de la carte.
+          x: function () { return gsap.utils.random(-80, 80); },
+          y: function () { return gsap.utils.random(-55, 55); },
+          rotate: function () { return gsap.utils.random(-42, 42); },
+          scale: function () { return gsap.utils.random(0.45, 1.45); },
           duration: 0.9,
           ease: 'power3.out',
-          stagger: 0.05
+          stagger: 0.06
         });
       }
     },
