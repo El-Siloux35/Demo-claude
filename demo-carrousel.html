@@ -11,6 +11,7 @@
     --ground: #ffffff;
     --surface: #f0f0f0;
     --panel: #f5f5f5;
+    --card-face: #dadada;
     --panel-edge: #d6d6d6;
     --ink: #111111;
     --ink-dim: #6e6e6e;
@@ -22,6 +23,7 @@
       --ground: #0a0a0a;
       --surface: #171717;
       --panel: #161616;
+      --card-face: #2c2c2c;
       --panel-edge: #333333;
       --ink: #f2f2f2;
       --ink-dim: #9a9a9a;
@@ -33,6 +35,7 @@
     --ground: #0a0a0a;
     --surface: #171717;
     --panel: #161616;
+    --card-face: #2c2c2c;
     --panel-edge: #333333;
     --ink: #f2f2f2;
     --ink-dim: #9a9a9a;
@@ -326,7 +329,7 @@
     c.width = TEX_W;
     c.height = TEX_H;
     var x = c.getContext('2d');
-    var ground = cssVar('--panel', '#f5f5f5');
+    var ground = cssVar('--card-face', '#dadada');
     var ink = cssVar('--ink', '#111111');
     var dim = cssVar('--ink-dim', '#6e6e6e');
     var edge = cssVar('--panel-edge', '#d6d6d6');
@@ -337,48 +340,19 @@
     x.lineWidth = 4;
     x.strokeRect(2, 2, TEX_W - 4, TEX_H - 4);
 
-    // Aplat de motif : chaque carte a son propre angle de hachures, pour
-    // qu'on distingue les cartes les unes des autres dans l'empilement.
-    x.save();
-    x.beginPath();
-    x.rect(0, 0, TEX_W, TEX_H);
-    x.clip();
-    // Les hachures sont tracées dans un repère tourné : des lignes verticales
-    // dans un contexte pivoté gardent le même écart quel que soit l'angle,
-    // alors que des lignes obliques tracées à la main se resserrent et
-    // finissent par se remplir en aplat aux angles rasants.
-    x.translate(TEX_W / 2, TEX_H / 2);
-    x.rotate((index * 23 + 12) * Math.PI / 180);
-    x.strokeStyle = ink;
-    x.globalAlpha = 0.2;
-    x.lineWidth = 8;
-    for (var s = -700; s < 700; s += 34) {
-      x.beginPath();
-      x.moveTo(s, -700);
-      x.lineTo(s, 700);
-      x.stroke();
-    }
-    x.restore();
-    x.globalAlpha = 1;
-
-    // Bandeau de texte en haut de la carte : les cartes se recouvrent par le
-    // bas dans l'empilement, un bandeau posé en bas serait masqué par la
-    // carte suivante.
-    x.fillStyle = ground;
-    x.globalAlpha = 0.9;
-    x.fillRect(0, 0, TEX_W, 150);
-    x.globalAlpha = 1;
-
+    // Plus de hachures : les cartes se distinguent désormais par leur
+    // profondeur, chaque rang plus lointain se fondant davantage dans le
+    // fond de page. Un aplat suffit, et le texte se pose directement dessus.
     x.fillStyle = dim;
     x.font = '500 20px "IBM Plex Mono", monospace';
-    x.fillText(card.n + ' / 07', 34, 44);
+    x.fillText(card.n + ' / 07', 34, 48);
 
     x.fillStyle = ink;
-    x.font = '700 40px Manrope, sans-serif';
-    x.fillText(card.title, 34, 92);
+    x.font = '600 40px "Inter Tight", Helvetica, Arial, sans-serif';
+    x.fillText(card.title, 34, 96);
 
     x.fillStyle = dim;
-    x.font = '500 21px Manrope, sans-serif';
+    x.font = '400 21px "Inter Tight", Helvetica, Arial, sans-serif';
     var words = card.text.split(' ');
     var line = '';
     for (var i = 0; i < words.length; i++) {
@@ -386,7 +360,7 @@
       if (x.measureText(test).width > TEX_W - 68) break;
       line = test;
     }
-    x.fillText(line, 34, 128);
+    x.fillText(line, 34, 132);
     return c;
   }
 
@@ -438,10 +412,16 @@
   var FRAG = [
     'uniform sampler2D uTexture;',
     'uniform float uAlpha;',
+    'uniform float uFade;',
+    'uniform vec3 uFog;',
     'varying vec2 vUv;',
     'void main() {',
     '  vec4 tex = texture2D(uTexture, vUv);',
-    '  gl_FragColor = vec4(tex.rgb, tex.a * uAlpha);',
+    // Perspective atmosphérique : plus la carte est au fond, plus elle se
+    // mélange au fond de page. Un simple assombrissement demanderait d'être
+    // inversé en thème sombre ; se fondre vers le fond éclaircit sur page
+    // claire et assombrit sur page sombre, sans rien à basculer.
+    '  gl_FragColor = vec4(mix(tex.rgb, uFog, uFade), tex.a * uAlpha);',
     '}',
   ].join('\n');
 
@@ -461,6 +441,8 @@
           uTexture: { value: texture },
           uOffset: { value: 0 },
           uAlpha: { value: 1 },
+          uFade: { value: 0 },
+          uFog: { value: new THREE.Color(cssVar('--ground', '#ffffff')) },
         },
         vertexShader: VERT,
         fragmentShader: FRAG,
@@ -604,6 +586,9 @@
       mesh.material.uniforms.uAlpha.value = offset > 0
         ? Math.max(0, 1 - offset * 0.16)
         : 1;
+      // offset vaut 0 au centre et croît avec la profondeur : chaque rang
+      // plus lointain se fond donc un peu plus dans le fond de page.
+      mesh.material.uniforms.uFade.value = Math.min(0.66, Math.max(0, offset) * 0.155);
       mesh.visible = offset < 7 && offset > -3.2;
       // Le tri de rendu suit la profondeur : la carte la plus proche passe
       // devant, sinon la transparence dessine les cartes dans le désordre.

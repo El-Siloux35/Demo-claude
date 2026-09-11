@@ -395,15 +395,24 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
     g.lineWidth = 2;
     g.strokeRect(1, 1, 510, 658);
 
-    var tex = new THREE.CanvasTexture(c);
-    // La paroi est rendue par sa face interne, ce qui inverse l'image
-    // horizontalement. On la retourne ici plutôt que de retourner la
-    // géométrie, qui devrait alors être reconstruite.
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.repeat.x = -1;
-    tex.offset.x = 1;
-    tex.anisotropy = 4;
-    return tex;
+    return c;
+  }
+
+  // Deux textures pour une même affiche. Vue de l'intérieur, la paroi
+  // inverse l'image horizontalement : cette version-là est retournée. Vue de
+  // l'extérieur, elle ne l'est pas. Retourner la texture plutôt que la
+  // géométrie évite d'avoir à reconstruire cette dernière.
+  function textures(canvas) {
+    var inner = new THREE.CanvasTexture(canvas);
+    inner.wrapS = THREE.RepeatWrapping;
+    inner.repeat.x = -1;
+    inner.offset.x = 1;
+    inner.anisotropy = 4;
+
+    var outer = new THREE.CanvasTexture(canvas);
+    outer.anisotropy = 4;
+
+    return { inner: inner, outer: outer };
   }
 
   /* ------------------------------------------------------------------
@@ -438,7 +447,7 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
 
   var RADIUS = 7.2;
   var ARC = (Math.PI * 2) / PANELS;
-  var textures = DEMOS.map(function (d, i) { return poster(d, i); });
+  var posters = DEMOS.map(function (d, i) { return textures(poster(d, i)); });
 
   /* ------------------------------------------------------------------
      Un cylindre complet, et non un mur : deux peaux sur la même
@@ -447,33 +456,47 @@ Respecte prefers-reduced-motion en supprimant la dérive au repos.</pre>
      proche visible sans masquer le fond. C'est cette seconde peau qui
      ferme la forme — sans elle, il ne reste qu'un arc.
      ------------------------------------------------------------------ */
-  function cylinder(radius, height, texOffset, skinColor) {
+  function cylinder(radius, height, texOffset, outerOpacity) {
     var group = new THREE.Group();
     for (var i = 0; i < PANELS; i++) {
       var geo = curvedPanel(radius, ARC, height, 24);
+      var pair = posters[(i + texOffset) % DEMOS.length];
 
       var inner = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-        map: textures[(i + texOffset) % DEMOS.length],
-        side: THREE.BackSide
+        map: pair.inner,
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: 0.95,
+        // Sans cela, deux parois translucides se masquent l'une l'autre
+        // selon le tampon de profondeur et le tambour se troue.
+        depthWrite: false
       }));
       inner.rotation.y = i * ARC;
+      inner.renderOrder = 1;
       group.add(inner);
 
+      // La paroi proche n'est plus une peau opaque : elle porte la même
+      // affiche, à l'endroit, et laisse passer la paroi opposée derrière
+      // elle. On voit donc le contenu de l'extérieur comme de l'intérieur.
       var outer = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-        color: skinColor,
-        side: THREE.FrontSide
+        map: pair.outer,
+        side: THREE.FrontSide,
+        transparent: true,
+        opacity: outerOpacity,
+        depthWrite: false
       }));
       outer.rotation.y = i * ARC;
+      outer.renderOrder = 2;
       group.add(outer);
     }
     return group;
   }
 
-  var lower = cylinder(RADIUS, 3.0, 0, 0x1a1a1a);
+  var lower = cylinder(RADIUS, 3.0, 0, 0.34);
   lower.position.y = -1.9;
   rig.add(lower);
 
-  var upper = cylinder(RADIUS * 0.9, 2.0, 3, 0x151515);
+  var upper = cylinder(RADIUS * 0.9, 2.0, 3, 0.22);
   upper.position.y = 2.6;
   rig.add(upper);
 
