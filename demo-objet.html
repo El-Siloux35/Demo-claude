@@ -38,11 +38,20 @@
     background: var(--ground);
     color: var(--ink);
     font-family: var(--font-display);
-    padding-left: 190px;
+    padding-left: 216px;
   }
 
   .sidebar {
-    flex: 0 0 auto;
+    /* Contrairement aux autres démos, cette page n'a pas de corps en flex :
+       son contenu est une piste de défilement pleine largeur. La barre est
+       donc fixée elle-même, et le corps lui réserve sa largeur. */
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 10;
+    background: var(--ground);
+    overflow-y: auto;
     width: 216px;
     padding: clamp(20px, 3vw, 30px) 22px;
     display: flex;
