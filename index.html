@@ -72,8 +72,16 @@
     inset: 0;
     z-index: 3;
     display: grid;
+    /* « safe » est la clé : sans lui, un contenu plus haut que la place
+       disponible déborde par le haut en ignorant le rembourrage, et passe
+       sous le logo. Avec, l'alignement bascule sur « start » plutôt que de
+       laisser sortir quoi que ce soit. */
     align-content: end;
+    align-content: safe end;
     padding: clamp(22px, 3.4vw, 52px);
+    /* Réserve la bande du logo et celle du bouton : sans elle, l'accroche
+       leur passe dessous dès que la fenêtre est courte. */
+    padding-top: calc(clamp(18px, 3vw, 40px) + 52px);
     /* Transparent to the pointer, so hovering the copy zone and steering the
        3D both keep working straight through the text. */
     pointer-events: none;
@@ -110,16 +118,6 @@
 
   .intro { max-width: 42rem; }
 
-  .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 450;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
-    margin: 0 0 22px;
-  }
-
   h1 {
     font-size: clamp(26px, 3.4vw, 46px);
     font-weight: 500;
@@ -136,6 +134,53 @@
     margin: 0;
     max-width: 34ch;
     text-wrap: pretty;
+  }
+
+  /* Logo de page. Les deux marques sont dessinées à la main, faute de
+     pouvoir embarquer les fichiers officiels. */
+  .logo {
+    position: fixed;
+    top: clamp(18px, 3vw, 40px);
+    left: clamp(18px, 3vw, 40px);
+    z-index: 7;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    text-decoration: none;
+    line-height: 0;
+  }
+  /* Seules les parties monochromes passent en mélange par différence : elles
+     traversent ainsi le passage du noir au blanc sans règle à basculer. Les
+     couleurs de Figma, elles, restent les siennes. */
+  .logo-claude, .logo-x {
+    color: #ffffff;
+    fill: currentColor;
+    mix-blend-mode: difference;
+  }
+  .logo-x {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1;
+    opacity: 0.75;
+  }
+  .logo-claude g {
+    transform-origin: 50% 50%;
+    animation: logo-spin 26s linear infinite;
+  }
+  .logo-claude rect {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: logo-beat 2.6s ease-in-out infinite;
+  }
+  @keyframes logo-spin { to { transform: rotate(360deg); } }
+  /* Battement discret : à 0,5 les rayons se rétractaient presque
+     entièrement et l'étoile disparaissait à mi-cycle. */
+  @keyframes logo-beat {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.78); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .logo-claude g, .logo-claude rect { animation: none; }
   }
 
   /* Fixé en haut à droite et au-dessus des colonnes, pour rester
@@ -318,7 +363,10 @@
       position: relative;
       inset: auto;
       display: block;
-      padding: 24px 24px 64px;
+      /* En petite largeur l'overlay repasse dans le flux, mais le logo et le
+         bouton restent fixes : il faut leur réserver leur bande, sans quoi
+         l'accroche démarre dessous. */
+      padding: calc(clamp(18px, 3vw, 40px) + 56px) 24px 64px;
       z-index: 3;
     }
     h1 { white-space: normal; font-size: clamp(28px, 8vw, 40px); }
@@ -355,6 +403,33 @@
   </span>
 </button>
 
+<a class="logo" href="index.html" aria-label="Démo Claude Code &times; Figma">
+  <svg class="logo-claude" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+    <g>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(0 11 11)" style="animation-delay:0.00s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(30 11 11)" style="animation-delay:0.12s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(60 11 11)" style="animation-delay:0.24s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(90 11 11)" style="animation-delay:0.36s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(120 11 11)" style="animation-delay:0.48s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(150 11 11)" style="animation-delay:0.60s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(180 11 11)" style="animation-delay:0.00s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(210 11 11)" style="animation-delay:0.12s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(240 11 11)" style="animation-delay:0.24s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(270 11 11)" style="animation-delay:0.36s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(300 11 11)" style="animation-delay:0.48s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(330 11 11)" style="animation-delay:0.60s"></rect>
+    </g>
+  </svg>
+  <span class="logo-x" aria-hidden="true">&times;</span>
+  <svg class="logo-figma" width="15" height="22" viewBox="0 0 24 36" aria-hidden="true" focusable="false">
+    <path d="M12 0H6a6 6 0 0 0 0 12h6Z" fill="#F24E1E"></path>
+    <path d="M12 0h6a6 6 0 0 1 0 12h-6Z" fill="#FF7262"></path>
+    <path d="M12 12H6a6 6 0 0 0 0 12h6Z" fill="#A259FF"></path>
+    <circle cx="18" cy="18" r="6" fill="#1ABCFE"></circle>
+    <circle cx="6" cy="30" r="6" fill="#0ACF83"></circle>
+  </svg>
+</a>
+
 <a class="cta" href="demo-voix.html">
   Voir les démos
   <!-- Flèche oblique et non descendante : le bouton quitte la page, il ne
@@ -364,7 +439,6 @@
 
 <div class="overlay">
   <div class="intro">
-    <p class="eyebrow">Démo Claude Code</p>
     <h1>Ouvrir la création d'interface à l'expérimentation avec le vibecoding.</h1>
     <p class="tagline">Prise en main de Claude &times; Figma.</p>
   </div>
