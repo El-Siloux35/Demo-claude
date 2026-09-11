@@ -241,9 +241,14 @@
   /* --- Les plans, un par sujet ------------------------------------- */
 
   .plan {
-    position: relative;
+    /* Collant : chaque plan tient à l'écran pendant que le suivant vient
+       le recouvrir. C'est l'empilement au défilement, la même mécanique
+       que l'escalier du héros, à l'échelle de la page. L'ordre du DOM
+       suffit à décider qui passe devant. */
+    position: sticky;
+    top: 0;
     z-index: 6;
-    min-height: 100vh;
+    height: 100vh;
     background: var(--light);
     color: var(--light-ink);
     padding: clamp(28px, 5vw, 72px) clamp(20px, 5vw, 72px);
@@ -253,6 +258,13 @@
     gap: clamp(24px, 4vw, 56px);
     border-top: 1px solid var(--rule);
   }
+  /* Un plan sur deux inverse texte et illustration, et prend un fond
+     légèrement teinté : la lecture retrouve un rythme au lieu de répéter
+     cinq fois la même page. */
+  .plan:nth-child(even) { background: #f4f4f5; }
+  .plan--flip .plan-body { grid-column: 2; grid-row: 1; }
+  .plan--flip .plan-art { grid-column: 1; grid-row: 1; }
+
   .plan-body { max-width: 30rem; }
 
   .plan-num {
@@ -379,12 +391,43 @@
 
   @media (max-width: 860px) {
     .plan {
-      grid-template-columns: 1fr;
+      /* L'empilement suppose un écran haut : en petite largeur les plans
+         redeviennent de simples sections qui se suivent. */
+      position: relative;
+      height: auto;
       min-height: auto;
+      grid-template-columns: 1fr;
       padding: 56px 24px;
     }
+    .plan--flip .plan-body,
+    .plan--flip .plan-art { grid-column: 1; grid-row: auto; }
     .plan-art { max-height: none; aspect-ratio: 4 / 3; }
   }
+
+  /* La dernière image de la page : fond noir, la phrase lettre à lettre. */
+  .finale {
+    position: relative;
+    z-index: 7;
+    min-height: 100vh;
+    background: var(--ground);
+    color: var(--light);
+    display: grid;
+    place-items: center;
+    padding: clamp(28px, 5vw, 72px);
+  }
+  .reveal {
+    margin: 0;
+    font-size: clamp(28px, 5.5vw, 68px);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    text-align: center;
+    /* Flex, et non grid : en éléments de grille les lettres prendraient
+       chacune une ligne et la phrase se lirait verticalement. */
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .reveal span { display: inline-block; white-space: pre; will-change: transform, opacity; }
 
   /* --- Below the fold ------------------------------------------------ */
 
@@ -454,7 +497,7 @@
     .hotspot { display: none; }
     /* The columns need a scroll corridor the page no longer has room for,
        and the line they uncover goes with them. */
-    .wipe, #corridor, .reveal { display: none; }
+    .wipe, #corridor { display: none; }
   }
 
   @media (hover: none), (pointer: coarse) {
@@ -534,7 +577,6 @@
   <span></span><span></span><span></span><span></span><span></span><span></span>
 </div>
 
-<p class="reveal" id="reveal">C'est cool quand même</p>
 
 <div class="cursor" id="cursor" aria-hidden="true"></div>
 
@@ -552,7 +594,7 @@
   </div>
   <div class="plan-art"><div class="art-snap" data-art="snap"><i></i><i></i><i></i><i></i><i></i></div></div>
 </section>
-<section class="plan">
+<section class="plan plan--flip">
   <div class="plan-body">
     <p class="plan-num">03 / 06</p>
     <h2>Designer un site scrollytelling</h2>
@@ -576,7 +618,7 @@
   </div>
   <div class="plan-art"><div class="art-curves" data-art="curves"><svg viewBox="0 0 300 150" aria-hidden="true"><line class="grid-line" x1="10" y1="140" x2="290" y2="140"></line><line class="grid-line" x1="10" y1="10" x2="10" y2="140"></line><path d="M10 140 C 90 140, 210 10, 290 10"></path><path d="M10 140 C 150 140, 150 10, 290 10"></path><path d="M10 140 C 40 10, 260 10, 290 10"></path><circle cx="10" cy="140" r="5"></circle></svg></div></div>
 </section>
-<section class="plan">
+<section class="plan plan--flip">
   <div class="plan-body">
     <p class="plan-num">05 / 06</p>
     <h2>Mettre en ligne son site vibecodé</h2>
@@ -599,6 +641,10 @@
     </a>
   </div>
   <div class="plan-art"><div class="art-grid" data-art="grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+</section>
+
+<section class="finale">
+  <p class="reveal" id="reveal">C'est cool quand même</p>
 </section>
 
 <!-- The prompt handed to the visitor. Kept in the DOM rather than in a JS
@@ -1096,6 +1142,24 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       revealEl.appendChild(span);
     });
 
+    // La phrase de fin se joue à l'arrivée de sa section, et non plus dans
+    // la timeline du héros : elle a quitté le milieu du parcours pour en
+    // devenir la dernière image.
+    gsap.from(letters, {
+      yPercent: 120,
+      opacity: 0,
+      duration: 0.6,
+      ease: 'power3.out',
+      stagger: 0.035,
+      scrollTrigger: {
+        trigger: '.finale',
+        start: 'top 62%',
+        // Pas de scrub : la phrase se joue d'un trait, et se rejoue à
+        // l'envers si l'on remonte.
+        toggleActions: 'play none none reverse'
+      }
+    });
+
     gsap.matchMedia().add('(min-width: 861px)', function () {
       // No pin: every visual is position:fixed already, so the corridor alone
       // gives the timeline something to scrub against. That sidesteps the
@@ -1121,16 +1185,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
         // Second temps : les colonnes blanches montent et recouvrent le
         // noir, chacune plus tard que sa voisine de gauche.
-        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1)
-
-        // La ligne arrive une fois le blanc posé.
-        .from(letters, {
-          yPercent: 120,
-          opacity: 0,
-          duration: 0.5,
-          ease: 'power3.out',
-          stagger: 0.035
-        }, 1.85);
+        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1);
     });
   }
 
@@ -1245,6 +1300,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       });
       gsap.set(grid.querySelectorAll('i'), { scale: 0.7 });
     }
+
 
     // Les hauteurs dépendent des polices, qui arrivent après le premier
     // rendu : sans ce recalcul, les déclencheurs restent calés sur des
