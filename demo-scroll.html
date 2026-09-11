@@ -222,6 +222,37 @@
   }
   .grid-batch i { display: block; aspect-ratio: 1; background: var(--dark-ink); opacity: 0; }
 
+  /* Le nom de l'option est mis en valeur partout où il apparaît dans le
+     texte : c'est le mot qu'on retient et qu'on réécrira. */
+  .kw {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    font-weight: 500;
+    color: var(--ink);
+    background: rgba(17,17,17,0.08);
+    padding: 0.12em 0.4em;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .demo.inverted .kw { color: var(--dark-ink); background: rgba(242,242,242,0.14); }
+
+  .see-prompt {
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: inherit;
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    padding: 8px 14px;
+    cursor: pointer;
+    opacity: 0.65;
+    transition: opacity 160ms ease;
+  }
+  .see-prompt:hover, .see-prompt:focus-visible { opacity: 1; }
+
   .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 0; }
 
   /* --- Encart prompt ------------------------------------------------ */
@@ -304,7 +335,15 @@
     </div>
     <div class="frame"><div class="square" id="scrubSquare"></div></div>
     <p class="readout" id="scrubOut">progression <b>0.00</b></p>
-    <p class="note">Sans <code>scrub</code>, une animation se déclenche et se joue seule. Avec, sa tête de lecture est collée à la position du défilement : remontez, elle revient en arrière. La valeur numérique, ici <b>1</b>, est le retard de rattrapage en secondes, ce qui donne au mouvement son inertie.</p>
+    <p class="note">Sans <span class="kw">scrub</span>, une animation se déclenche puis se joue seule. Avec, sa tête de lecture est collée à la position du défilement : remontez, elle revient en arrière. La valeur numérique — ici <span class="kw">scrub: 1</span> — est le retard de rattrapage en secondes, ce qui donne au mouvement son inertie. Pour déboguer, <span class="kw">markers: true</span> affiche les seuils à l'écran.</p>
+    <button class="see-prompt" type="button" data-prompt="p-scrub">Voir le prompt</button>
+    <script type="text/plain" id="p-scrub">Fais tourner et rétrécir un carré noir pendant qu'on fait défiler sa section, avec GSAP ScrollTrigger.
+
+Lie l'animation au défilement avec scrub, en lui donnant une seconde de rattrapage pour que le carré poursuive le mouvement au lieu d'y coller image par image. L'animation doit repartir en arrière quand on remonte.
+
+Fais commencer le déclencheur quand le haut de la section atteint 70 % de la hauteur de l'écran, et finir quand son bas atteint 30 %.
+
+Affiche sous le carré la progression rapportée par ScrollTrigger, en direct, avec deux décimales.</script>
   </section>
 
   <!-- 2 ------------------------------------------------------------ -->
@@ -317,7 +356,15 @@
       <div class="bars" id="pinBars"><i></i><i></i><i></i><i></i></div>
     </div>
     <p class="readout" id="pinOut">épinglé <b>non</b></p>
-    <p class="note">La section se fige à l'écran le temps que le défilement parcoure sa plage, et c'est son contenu qui progresse. ScrollTrigger insère pour cela un espaceur de la hauteur voulue : c'est ce qui évite que le reste de la page ne remonte d'un coup, et la raison pour laquelle on épingle rarement autre chose qu'un conteneur.</p>
+    <p class="note"><span class="kw">pin</span> fige la section à l'écran le temps que le défilement parcoure sa plage, et c'est son contenu qui progresse. ScrollTrigger insère pour cela un espaceur de la hauteur voulue : c'est ce qui évite que le reste de la page ne remonte d'un coup, et la raison pour laquelle on épingle rarement autre chose qu'un conteneur. <span class="kw">anticipatePin: 1</span> prend la mesure une image plus tôt, sans quoi la section sursaute à l'instant où elle se fige.</p>
+    <button class="see-prompt" type="button" data-prompt="p-pin">Voir le prompt</button>
+    <script type="text/plain" id="p-pin">Épingle une section pendant qu'on la fait défiler, avec GSAP ScrollTrigger, et fais grandir quatre barres noires l'une après l'autre pendant qu'elle est figée.
+
+Utilise pin sur la section elle-même, une plage de 140 % de la hauteur d'écran, et un scrub pour que les barres suivent le défilement. Décale les barres entre elles pour qu'elles ne montent pas ensemble.
+
+Ajoute anticipatePin pour que la section ne sursaute pas au moment de se figer.
+
+Affiche sous les barres si la section est épinglée ou non, mis à jour quand l'état change.</script>
   </section>
 
   <!-- 3 ------------------------------------------------------------ -->
@@ -328,7 +375,15 @@
     </div>
     <div class="frame"><div class="ring" id="toggleRing"></div></div>
     <p class="readout" id="toggleOut">état <b>—</b></p>
-    <p class="note">Quand on n'attache pas l'animation au défilement, il faut dire quoi faire à chacun des quatre passages : entrée, sortie, entrée en remontant, sortie en remontant. Ici <b>play none none reverse</b> : le cercle se dessine en descendant et se défait en remontant. Remontez pour le voir.</p>
+    <p class="note">Quand l'animation n'est pas attachée au défilement, il faut dire quoi faire à chacun des quatre passages : entrée, sortie, entrée en remontant, sortie en remontant. C'est ce que liste <span class="kw">toggleActions</span>, dans cet ordre. Ici <span class="kw">play none none reverse</span> : le cercle se dessine en descendant et se défait en remontant. Remontez pour le voir.</p>
+    <button class="see-prompt" type="button" data-prompt="p-toggle">Voir le prompt</button>
+    <script type="text/plain" id="p-toggle">Fais apparaître un anneau blanc sur fond noir quand sa section entre dans l'écran, avec GSAP ScrollTrigger.
+
+N'attache pas l'animation au défilement : crée-la en pause, puis pilote-la avec toggleActions réglé sur « play none none reverse ». L'anneau doit se dessiner en descendant et se défaire quand on remonte, ce qui est tout l'intérêt du réglage.
+
+L'animation part d'une échelle réduite et d'une rotation négative, pour qu'on voie le sens de lecture.
+
+Affiche sous l'anneau lequel des quatre ordres vient d'être joué.</script>
   </section>
 
   <!-- 4 ------------------------------------------------------------ -->
@@ -339,7 +394,17 @@
     </div>
     <div class="frame"><div class="dots" id="snapDots"><i></i><i></i><i></i><i></i><i></i></div></div>
     <p class="readout" id="snapOut">cran <b>1</b> / 5</p>
-    <p class="note">Lâchez le défilement entre deux crans : il rejoint le plus proche au lieu de rester entre deux. Utile pour une série d'étapes qu'on ne veut jamais voir à moitié. À manier avec retenue, car reprendre la main sur le défilement d'un visiteur se remarque toujours.</p>
+    <p class="note">Lâchez le défilement entre deux crans : <span class="kw">snap</span> le fait rejoindre le plus proche au lieu de rester entre deux. Cinq crans, donc quatre intervalles, d'où <span class="kw">snapTo: 1/4</span>. Utile pour une série d'étapes qu'on ne veut jamais voir à moitié — mais à manier avec retenue, car reprendre la main sur le défilement d'un visiteur se remarque toujours.</p>
+    <button class="see-prompt" type="button" data-prompt="p-snap">Voir le prompt</button>
+    <script type="text/plain" id="p-snap">Fais se remplir cinq pastilles l'une après l'autre pendant qu'on fait défiler leur section, avec GSAP ScrollTrigger, et fais que le défilement se pose sur chacune.
+
+Épingle la section sur une plage de 160 % de la hauteur d'écran, avec un scrub court. Ajoute snap avec snapTo à un quart : cinq crans font quatre intervalles.
+
+À chaque mise à jour, déduis le cran courant de la progression et remplis les pastilles jusqu'à celui-ci.
+
+Désactive le snap sous prefers-reduced-motion : reprendre la main sur le défilement est exactement ce que cette préférence demande d'éviter.
+
+Affiche sous les pastilles le numéro du cran courant.</script>
   </section>
 
   <!-- 5 ------------------------------------------------------------ -->
@@ -352,7 +417,15 @@
       <div class="rail-inner" id="railInner"><i></i><i></i><i></i><i></i><i></i><i></i></div>
     </div>
     <p class="readout" id="railOut">avancée <b>0 %</b></p>
-    <p class="note">La piste est plus large que l'écran. La section est épinglée, et le défilement vertical est converti en translation horizontale. Le visiteur ne change pas de geste : c'est le même scroll, relié à un autre axe.</p>
+    <p class="note">La piste est plus large que l'écran. La section est épinglée, et le défilement vertical est converti en translation horizontale. Le visiteur ne change pas de geste : c'est le même scroll, relié à un autre axe. <span class="kw">invalidateOnRefresh</span> est indispensable ici, la distance à parcourir dépendant de la largeur rendue : sans lui, un redimensionnement laisse la piste s'arrêter avant sa fin. C'est aussi ce réglage qui permet à <span class="kw">containerAnimation</span> de déclencher des animations sur les éléments de la piste.</p>
+    <button class="see-prompt" type="button" data-prompt="p-rail">Voir le prompt</button>
+    <script type="text/plain" id="p-rail">Convertis le défilement vertical en translation horizontale, avec GSAP ScrollTrigger.
+
+Fais une piste de six carrés, plus large que l'écran, alternant pleins et contournés. Épingle sa section et déplace la piste vers la gauche à mesure qu'on descend, avec un scrub.
+
+Calcule la distance à parcourir depuis la largeur rendue de la piste moins celle de son conteneur, et exprime la fin du déclencheur comme une fonction de cette distance. Ajoute invalidateOnRefresh, sans quoi un redimensionnement laisse la piste s'arrêter avant sa fin.
+
+Affiche sous la piste le pourcentage d'avancée.</script>
   </section>
 
   <!-- 6 ------------------------------------------------------------ -->
@@ -365,7 +438,15 @@
       <div class="grid-batch" id="batchGrid"></div>
     </div>
     <p class="readout" id="batchOut">apparus <b>0</b> / 24</p>
-    <p class="note">Douze déclencheurs individuels feraient entrer douze carrés chacun pour soi, et la grille arriverait en bouillie. <code>batch</code> regroupe ceux qui franchissent le seuil dans la même image et les anime d'un seul geste, décalés entre eux. Une seule animation là où il y en aurait eu douze.</p>
+    <p class="note">Vingt-quatre déclencheurs individuels feraient entrer vingt-quatre carrés chacun pour soi, et la grille arriverait en bouillie. <span class="kw">ScrollTrigger.batch()</span> regroupe ceux qui franchissent le seuil dans la même image et les anime d'un seul geste, décalés entre eux. Une seule animation là où il y en aurait eu vingt-quatre — c'est autant une question de rendu visuel que de coût.</p>
+    <button class="see-prompt" type="button" data-prompt="p-batch">Voir le prompt</button>
+    <script type="text/plain" id="p-batch">Fais apparaître une grille de vingt-quatre carrés blancs sur fond noir à mesure qu'ils entrent dans l'écran, avec GSAP ScrollTrigger.
+
+N'utilise pas un déclencheur par carré : ils arriveraient chacun pour soi et la grille se remplirait en bouillie. Utilise ScrollTrigger.batch, qui regroupe les éléments franchissant le seuil dans la même image et les anime d'un seul geste, décalés entre eux.
+
+Règle le seuil à 88 % de la hauteur d'écran, et ajoute overwrite pour qu'un lot en cours ne se batte pas avec le suivant.
+
+Affiche sous la grille le nombre de carrés apparus, et la taille du dernier lot : c'est ce chiffre qui montre que le regroupement a bien lieu.</script>
   </section>
 
   <section class="demo" style="min-height:60vh">
@@ -373,29 +454,15 @@
   </section>
 </main>
 
-<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-  Voir le prompt
-</button>
 <div class="prompt-panel" id="promptPanel" hidden>
   <div class="prompt-panel-head">
-    <h2>Prompt utilisé</h2>
+    <h2 id="promptTitle">Prompt utilisé</h2>
     <div class="prompt-panel-actions">
       <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
       <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
     </div>
   </div>
-  <pre id="promptText">Construis une page HTML autonome qui démontre six mécanismes de GSAP ScrollTrigger, une section plein écran par mécanisme.
-
-N'utilise que des formes nues — un carré, un cercle, des barres, une grille de carrés — et des fonds unis qui alternent entre clair, gris et noir, pour que les limites de section se voient et que le mécanisme ne soit pas noyé sous du décor.
-
-Les six : scrub, qui colle la tête de lecture au défilement ; pin, qui fige la section pendant que son contenu avance ; toggleActions, qui donne un ordre à chacun des quatre passages ; snap, qui fait se poser le défilement sur des crans ; containerAnimation, qui convertit le défilement vertical en translation horizontale ; et ScrollTrigger.batch, qui regroupe les éléments franchissant le seuil dans la même image.
-
-Sous chaque forme, affiche en direct ce que ScrollTrigger rapporte : progression, état épinglé, cran courant, nombre d'éléments apparus. C'est ce relevé qui rend le mécanisme lisible plutôt que magique.
-
-Ajoute une jauge de progression fixe en haut, alimentée par onUpdate et self.progress.
-
-Chaque section porte le nom anglais exact de l'option, celui qu'il faut écrire pour l'obtenir. Respecte prefers-reduced-motion.</pre>
+  <pre id="promptText"></pre>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
@@ -575,14 +642,48 @@ Chaque section porte le nom anglais exact de l'option, celui qu'il faut écrire 
 
 <script>
 (function () {
-  var tab = document.getElementById('promptTab');
   var panel = document.getElementById('promptPanel');
+  var title = document.getElementById('promptTitle');
+  var textEl = document.getElementById('promptText');
   var closeBtn = document.getElementById('promptCloseBtn');
   var copyBtn = document.getElementById('promptCopyBtn');
-  var textEl = document.getElementById('promptText');
-  function setOpen(open) { panel.hidden = !open; tab.setAttribute('aria-expanded', String(open)); }
-  tab.addEventListener('click', function () { setOpen(panel.hidden); });
-  closeBtn.addEventListener('click', function () { setOpen(false); });
+  var opener = null;
+
+  function open(btn) {
+    var src = document.getElementById(btn.dataset.prompt);
+    if (!src) return;
+    // Le panneau est unique, son contenu vient de la section demandée : un
+    // prompt par mécanisme, et non un seul pavé pour toute la page.
+    textEl.textContent = src.textContent.trim();
+    title.textContent = 'Prompt · ' + btn.closest('.demo').querySelector('.label').textContent;
+    panel.hidden = false;
+    opener = btn;
+    btn.setAttribute('aria-expanded', 'true');
+    copyBtn.focus();
+  }
+
+  function close() {
+    panel.hidden = true;
+    if (opener) {
+      opener.setAttribute('aria-expanded', 'false');
+      // Le focus revient au bouton d'où l'on vient, sinon il retombe en haut
+      // du document et l'on perd sa place dans une page de six écrans.
+      opener.focus();
+      opener = null;
+    }
+  }
+
+  document.querySelectorAll('.see-prompt').forEach(function (btn) {
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-controls', 'promptPanel');
+    btn.addEventListener('click', function () { open(btn); });
+  });
+
+  closeBtn.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !panel.hidden) close();
+  });
+
   function fallbackCopy(text) {
     var ta = document.createElement('textarea');
     ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
