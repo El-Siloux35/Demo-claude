@@ -127,25 +127,6 @@
     text-wrap: balance;
   }
 
-  .hero-link {
-    pointer-events: auto;
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    margin-top: 18px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 450;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: var(--ink-dim);
-    border-bottom: 1px solid currentColor;
-    padding-bottom: 3px;
-    transition: color 200ms ease;
-  }
-  .hero-link:hover { color: var(--ink); }
-
   .tagline {
     font-size: 15px;
     line-height: 1.65;
@@ -171,41 +152,35 @@
   /* Seules les parties monochromes passent en mélange par différence : elles
      traversent ainsi le passage du noir au blanc sans règle à basculer. Les
      couleurs de Figma, elles, restent les siennes. */
-  /* La marque garde sa terracotta, qui se lit sur le noir comme sur le
-     blanc. Seul le séparateur passe en mélange par différence. */
-  .logo-claude .cc-body { fill: #d97757; }
-  .logo-x {
+  .logo-claude, .logo-x {
     color: #ffffff;
+    fill: currentColor;
     mix-blend-mode: difference;
+  }
+  .logo-x {
     font-family: var(--font-mono);
     font-size: 13px;
     line-height: 1;
     opacity: 0.75;
   }
-
-  /* Un balancement d'un pixel, et un clignement de loin en loin : de quoi
-     rendre la bestiole vivante sans qu'elle réclame l'attention. */
-  .cc-body {
+  .logo-claude g {
+    transform-origin: 50% 50%;
+    animation: logo-spin 26s linear infinite;
+  }
+  .logo-claude rect {
     transform-box: fill-box;
     transform-origin: 50% 100%;
-    animation: cc-bob 3.4s ease-in-out infinite;
+    animation: logo-beat 2.6s ease-in-out infinite;
   }
-  .cc-eye {
-    transform-box: fill-box;
-    transform-origin: 50% 50%;
-    animation: cc-blink 5.2s steps(1, end) infinite;
+  @keyframes logo-spin { to { transform: rotate(360deg); } }
+  /* Battement discret : à 0,5 les rayons se rétractaient presque
+     entièrement et l'étoile disparaissait à mi-cycle. */
+  @keyframes logo-beat {
+    0%, 100% { transform: scaleY(1); }
+    50% { transform: scaleY(0.78); }
   }
-  @keyframes cc-bob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-1px); }
-  }
-  @keyframes cc-blink {
-    0%, 92%, 100% { transform: scaleY(1); }
-    94%, 98% { transform: scaleY(0.12); }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .cc-body, .cc-eye { animation: none; }
+    .logo-claude g, .logo-claude rect { animation: none; }
   }
 
   /* Fixé en haut à droite et au-dessus des colonnes, pour rester
@@ -238,196 +213,100 @@
   .cta svg { display: block; }
 
   /* La liste vit désormais dans la section sombre, où le bouton conduit. */
-  /* --- Les plans, un par sujet ------------------------------------- */
-
-  .plan {
-    /* Collant : chaque plan tient à l'écran pendant que le suivant vient
-       le recouvrir. C'est l'empilement au défilement, la même mécanique
-       que l'escalier du héros, à l'échelle de la page. L'ordre du DOM
-       suffit à décider qui passe devant. */
-    position: sticky;
-    top: 0;
-    z-index: 6;
-    height: 100vh;
-    background: var(--light);
-    color: var(--light-ink);
-    padding: clamp(28px, 5vw, 72px) clamp(20px, 5vw, 72px);
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    gap: clamp(24px, 4vw, 56px);
-    border-top: 1px solid var(--rule);
+  .demos { width: 100%; max-width: 46rem; }
+  .demos h2 {
+    font-size: clamp(21px, 3vw, 27px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    margin: 0 0 18px;
   }
-  /* Un plan sur deux inverse texte et illustration, et prend un fond
-     légèrement teinté : la lecture retrouve un rythme au lieu de répéter
-     cinq fois la même page. */
-  .plan:nth-child(even) { background: #f4f4f5; }
-  .plan--flip .plan-body { grid-column: 2; grid-row: 1; }
-  .plan--flip .plan-art { grid-column: 1; grid-row: 1; }
-
-  .plan-body { max-width: 30rem; }
-
-  .plan-num {
+  .demos ul { list-style: none; margin: 0; padding: 0; }
+  .demos a {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    border-top: 1px solid var(--rule);
+    padding: 14px 0;
+    text-decoration: none;
+    color: inherit;
+    transition-property: border-color, padding-inline-start;
+    transition-duration: 200ms;
+  }
+  .demos li:last-child a { border-bottom: 1px solid var(--rule); }
+  .demos a:hover { border-top-color: var(--light-ink); padding-inline-start: 10px; }
+  .demos li:last-child a:hover { border-bottom-color: var(--light-ink); }
+  .demos .name { font-size: 16.5px; }
+  .demos .meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 450;
+    letter-spacing: 0.12em;
+    color: var(--light-dim);
+    white-space: nowrap;
+  }
+  .demos .eyebrow-dark {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 450;
     letter-spacing: 0.2em;
+    text-transform: uppercase;
     color: var(--light-dim);
-    margin: 0 0 14px;
+    margin: 0 0 20px;
   }
-  .plan h2 {
-    font-size: clamp(24px, 3.4vw, 40px);
-    font-weight: 500;
-    line-height: 1.08;
-    letter-spacing: -0.025em;
-    margin: 0 0 14px;
-    text-wrap: balance;
-  }
-  .plan p.plan-note {
-    font-size: 15px;
-    line-height: 1.65;
-    color: var(--light-dim);
-    margin: 0 0 26px;
-    text-wrap: pretty;
-  }
-  .plan-link {
-    display: inline-flex;
+
+  /* The prompt pill lives inside the hover zone, so it inherits its
+     visibility and its position in the stack with no rules of its own. */
+  .pill {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 16px;
-    border: 1px solid var(--light-ink);
+    padding: 9px 14px;
     border-radius: 999px;
+    background: var(--dark);
+    color: #f2f2f2;
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 450;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    text-decoration: none;
-    color: var(--light-ink);
-    transition: background 200ms ease, color 200ms ease;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(-200px, -200px, 0);
+    transition: opacity 220ms ease;
   }
-  .plan-link:hover { background: var(--light-ink); color: var(--light); }
+  .pill[data-show="1"] { opacity: 1; }
+  .pill[data-copied="1"] { background: #1d7a4c; }
 
-  /* L'illustration : des formes nues, animées au défilement. */
-  .plan-art {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    max-height: 62vh;
-    justify-self: center;
-    display: grid;
-    place-items: center;
-  }
-
-  /* 02 · des aplats colorés qui se rangent en colonne */
-  .art-snap { position: relative; width: 74%; height: 74%; }
-  .art-snap i {
-    position: absolute;
-    left: 0;
-    width: 100%;
-    height: 15%;
-    border-radius: 8px;
-    display: block;
-  }
-
-  /* 03 · des panneaux qui se recouvrent, comme la page elle-même */
-  .art-stack { position: relative; width: 78%; height: 70%; }
-  .art-stack i {
-    position: absolute;
-    inset: 0;
-    border-radius: 10px;
-    border: 1px solid var(--rule);
-    background: var(--light);
-    display: block;
-  }
-  .art-stack i:nth-child(1) { background: #ececec; }
-  .art-stack i:nth-child(2) { background: #f4f4f4; }
-  .art-stack i:nth-child(3) { background: var(--light-ink); }
-
-  /* 04 · trois courbes d'accélération, tracées au défilement */
-  .art-curves { width: 86%; }
-  .art-curves svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .art-curves path {
-    fill: none;
-    stroke: var(--light-ink);
-    stroke-width: 2.5;
-    stroke-linecap: round;
-  }
-  .art-curves .grid-line { stroke: var(--rule); stroke-width: 1; }
-  .art-curves circle { fill: var(--light-ink); }
-
-  /* 05 · un bloc qui rejoint sa destination */
-  .art-ship { width: 84%; display: grid; gap: 22px; }
-  .art-ship .track {
-    position: relative;
-    height: 74px;
-    border: 1px dashed var(--rule);
-    border-radius: 10px;
-  }
-  .art-ship .box {
-    position: absolute;
-    top: 9px;
-    left: 9px;
-    width: 56px;
-    height: 56px;
-    border-radius: 8px;
-    background: var(--light-ink);
-  }
-  .art-ship .bar { height: 4px; background: var(--rule); border-radius: 999px; overflow: hidden; }
-  .art-ship .bar i { display: block; height: 100%; width: 0%; background: var(--light-ink); }
-  .art-ship .ends {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--light-dim);
-  }
-
-  /* 06 · une grille de projets qui se remplit par lots */
-  .art-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 82%; }
-  .art-grid i { display: block; aspect-ratio: 1; border-radius: 8px; background: var(--light-ink); opacity: 0; }
-
-  @media (max-width: 860px) {
-    .plan {
-      /* L'empilement suppose un écran haut : en petite largeur les plans
-         redeviennent de simples sections qui se suivent. */
-      position: relative;
-      height: auto;
-      min-height: auto;
-      grid-template-columns: 1fr;
-      padding: 56px 24px;
-    }
-    .plan--flip .plan-body,
-    .plan--flip .plan-art { grid-column: 1; grid-row: auto; }
-    .plan-art { max-height: none; aspect-ratio: 4 / 3; }
-  }
-
-  /* La dernière image de la page : fond noir, la phrase lettre à lettre. */
-  .finale {
-    position: relative;
-    z-index: 7;
-    min-height: 100vh;
-    background: var(--ground);
-    color: var(--light);
-    display: grid;
-    place-items: center;
-    padding: clamp(28px, 5vw, 72px);
-  }
+  /* Sits between the columns and the section that follows: revealed by the
+     black they leave, and scrolled over by the content to come. */
   .reveal {
-    margin: 0;
-    font-size: clamp(28px, 5.5vw, 68px);
-    font-weight: 500;
-    letter-spacing: -0.03em;
-    text-align: center;
-    /* Flex, et non grid : en éléments de grille les lettres prendraient
-       chacune une ligne et la phrase se lirait verticalement. */
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+    /* Flex, not grid: as grid items the letters would each take a row and the
+       line would read downwards. */
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     justify-content: center;
+    pointer-events: none;
+    margin: 0;
+    color: var(--light-ink);
+    font-size: clamp(28px, 5vw, 64px);
+    font-weight: 500;
+    letter-spacing: -0.025em;
   }
-  .reveal span { display: inline-block; white-space: pre; will-change: transform, opacity; }
+  /* Each letter is its own inline-block so it can be moved on its own;
+     inline elements ignore transforms. */
+  .reveal span {
+    display: inline-block;
+    white-space: pre;
+    will-change: transform, opacity;
+  }
 
   /* --- Below the fold ------------------------------------------------ */
 
@@ -436,12 +315,12 @@
   /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
      the finished line stays on screen instead of being covered by the next
      section the instant it lands. */
-  /* 280vh de couloir pour 240vh de plage animée : 40vh de marge, le temps
-     que le rattrapage du scrub se pose. Elle peut rester courte parce que
-     l'escalier finit blanc et que le premier plan est blanc aussi : la
-     couture ne se voit pas. Trop longue, elle donnait un écran de vide ;
-     trop courte, l'escalier était encore en route quand le plan arrivait. */
-  #corridor { height: 280vh; }
+  /* 420vh de couloir pour 300vh de timeline. Les 120vh restants ne jouent
+     rien : c'est la pause qui laisse le temps de lire la phrase avant que
+     la section suivante ne monte la recouvrir. Séparer la longueur du
+     couloir de la plage animée est ce qui permet de régler ce temps de
+     lecture sans retoucher une seule animation. */
+  #corridor { height: 420vh; }
 
   /* Above the columns, so the section that follows scrolls over the black
      they leave behind rather than under it. */
@@ -462,35 +341,6 @@
   /* The lagging cursor, on top of everything. Difference blending means one
      element reads correctly on the white page and on the black columns, with
      nothing to switch. */
-  /* La pastille du prompt, qui suit le curseur pendant qu'on survole le
-     héros. Elle garde ses propres couleurs, sombre sur clair, plutôt que
-     de dépendre des jetons du héros : c'est une étiquette flottante, pas
-     un élément de la page. */
-  .pill {
-    position: fixed;
-    top: 0;
-    left: 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 9px 14px;
-    border-radius: 999px;
-    background: #0d0d0d;
-    color: #f2f2f2;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 450;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    pointer-events: none;
-    opacity: 0;
-    transform: translate3d(-200px, -200px, 0);
-    transition: opacity 220ms ease;
-  }
-  .pill[data-show="1"] { opacity: 1; }
-  .pill[data-copied="1"] { background: #1d7a4c; }
-
   .cursor {
     position: fixed;
     top: 0;
@@ -526,7 +376,7 @@
     .hotspot { display: none; }
     /* The columns need a scroll corridor the page no longer has room for,
        and the line they uncover goes with them. */
-    .wipe, #corridor { display: none; }
+    .wipe, #corridor, .reveal { display: none; }
   }
 
   @media (hover: none), (pointer: coarse) {
@@ -554,24 +404,20 @@
 </button>
 
 <a class="logo" href="index.html" aria-label="Démo Claude Code &times; Figma">
-  <svg class="logo-claude" width="24" height="24" viewBox="0 0 28 28" aria-hidden="true" focusable="false">
-    <defs>
-      <!-- Les yeux sont des trous, pas des rectangles blancs : sur le fond
-           noir du héros, du blanc peint ferait deux taches. -->
-      <mask id="cc-eyes">
-        <rect x="0" y="0" width="28" height="28" fill="#fff"></rect>
-        <rect class="cc-eye" x="7.5" y="9" width="2" height="4" fill="#000"></rect>
-        <rect class="cc-eye" x="18.5" y="9" width="2" height="4" fill="#000"></rect>
-      </mask>
-    </defs>
-    <g class="cc-body" mask="url(#cc-eyes)">
-      <rect x="3.5" y="6" width="21" height="15"></rect>
-      <rect x="0" y="13" width="28" height="4"></rect>
-      <rect x="5.5" y="21" width="17" height="1.5"></rect>
-      <rect x="5.5" y="21" width="2" height="5"></rect>
-      <rect x="9.5" y="21" width="2" height="5"></rect>
-      <rect x="16.5" y="21" width="2" height="5"></rect>
-      <rect x="20.5" y="21" width="2" height="5"></rect>
+  <svg class="logo-claude" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+    <g>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(0 11 11)" style="animation-delay:0.00s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(30 11 11)" style="animation-delay:0.12s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(60 11 11)" style="animation-delay:0.24s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(90 11 11)" style="animation-delay:0.36s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(120 11 11)" style="animation-delay:0.48s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(150 11 11)" style="animation-delay:0.60s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(180 11 11)" style="animation-delay:0.00s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(210 11 11)" style="animation-delay:0.12s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(240 11 11)" style="animation-delay:0.24s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(270 11 11)" style="animation-delay:0.36s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(300 11 11)" style="animation-delay:0.48s"></rect>
+      <rect x="10.1" y="1.6" width="1.8" height="7.2" rx="0.9" transform="rotate(330 11 11)" style="animation-delay:0.60s"></rect>
     </g>
   </svg>
   <span class="logo-x" aria-hidden="true">&times;</span>
@@ -595,10 +441,6 @@
   <div class="intro">
     <h1>Ouvrir la création d'interface à l'expérimentation avec le vibecoding.</h1>
     <p class="tagline">Prise en main de Claude &times; Figma.</p>
-    <a class="hero-link" href="https://app.notion.com/61f36514d2d5838d89bc81910412c2e2" target="_blank" rel="noopener">
-      Lire sur Notion
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
-    </a>
   </div>
 </div>
 
@@ -606,74 +448,28 @@
   <span></span><span></span><span></span><span></span><span></span><span></span>
 </div>
 
+<p class="reveal" id="reveal">C'est cool quand même</p>
 
 <div class="cursor" id="cursor" aria-hidden="true"></div>
 
 <div id="corridor"></div>
 
-<section class="plan">
-  <div class="plan-body">
-    <p class="plan-num">02 / 06</p>
-    <h2>Diriger le design de Claude avec Figma</h2>
-    <p class="plan-note">Le design ne se décrit pas, il se montre. Passer par Figma donne au modèle une référence visuelle exacte plutôt qu'une intention à interpréter.</p>
-    <a class="plan-link" href="https://app.notion.com/3d536514d2d5805e8944e81718fdfdfe" target="_blank" rel="noopener">
-      Lire sur Notion
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
-    </a>
+<section id="next">
+  <div class="demos">
+    <p class="eyebrow-dark">Les neuf démos</p>
+    <h2>À ouvrir sur ordinateur.</h2>
+    <ul>
+      <li><a href="demo-voix.html"><span class="name">Voix</span><span class="meta">( MICRO )</span></a></li>
+      <li><a href="demo-geste.html"><span class="name">Geste</span><span class="meta">( CAMÉRA )</span></a></li>
+      <li><a href="demo-regard.html"><span class="name">Regard</span><span class="meta">( CAMÉRA )</span></a></li>
+      <li><a href="demo-carte.html"><span class="name">Carte</span><span class="meta">( CAMÉRA )</span></a></li>
+      <li><a href="demo-carrousel.html"><span class="name">Carrousel</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-objet.html"><span class="name">Objet 3D</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-texte.html"><span class="name">Animation texte</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-tambour.html"><span class="name">Tambour</span><span class="meta">( LIBRE )</span></a></li>
+      <li><a href="demo-scroll.html"><span class="name">Scroll</span><span class="meta">( LIBRE )</span></a></li>
+    </ul>
   </div>
-  <div class="plan-art"><div class="art-snap" data-art="snap"><i></i><i></i><i></i><i></i><i></i></div></div>
-</section>
-<section class="plan plan--flip">
-  <div class="plan-body">
-    <p class="plan-num">03 / 06</p>
-    <h2>Designer un site scrollytelling</h2>
-    <p class="plan-note">Le défilement cesse d'être une position pour devenir une durée. On ne compose plus des pages, mais des plans qui se succèdent et se recouvrent.</p>
-    <a class="plan-link" href="https://app.notion.com/3d636514d2d580048687dfb6a2a7cd1f" target="_blank" rel="noopener">
-      Lire sur Notion
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
-    </a>
-  </div>
-  <div class="plan-art"><div class="art-stack" data-art="stack"><i></i><i></i><i></i></div></div>
-</section>
-<section class="plan">
-  <div class="plan-body">
-    <p class="plan-num">04 / 06</p>
-    <h2>Les bibliothèques d'animation web</h2>
-    <p class="plan-note">GSAP, Three.js, anime.js : un moteur d'animation interpole des nombres, un moteur de rendu dessine. Savoir lequel fait quoi évite bien des impasses.</p>
-    <a class="plan-link" href="https://app.notion.com/3d636514d2d580f5955af64826eff7a7" target="_blank" rel="noopener">
-      Lire sur Notion
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
-    </a>
-  </div>
-  <div class="plan-art"><div class="art-curves" data-art="curves"><svg viewBox="0 0 300 150" aria-hidden="true"><line class="grid-line" x1="10" y1="140" x2="290" y2="140"></line><line class="grid-line" x1="10" y1="10" x2="10" y2="140"></line><path d="M10 140 C 90 140, 210 10, 290 10"></path><path d="M10 140 C 150 140, 150 10, 290 10"></path><path d="M10 140 C 40 10, 260 10, 290 10"></path><circle cx="10" cy="140" r="5"></circle></svg></div></div>
-</section>
-<section class="plan plan--flip">
-  <div class="plan-body">
-    <p class="plan-num">05 / 06</p>
-    <h2>Mettre en ligne son site vibecodé</h2>
-    <p class="plan-note">Un dossier de fichiers statiques, un hébergeur, une adresse en HTTPS. C'est cette dernière qui débloque la caméra et le micro des démos.</p>
-    <a class="plan-link" href="https://app.notion.com/3d836514d2d580ccbe16d6a0d82610f2" target="_blank" rel="noopener">
-      Lire sur Notion
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
-    </a>
-  </div>
-  <div class="plan-art"><div class="art-ship" data-art="ship"><div class="track"><div class="box"></div></div><div class="bar"><i></i></div><div class="ends"><span>Local</span><span>En ligne</span></div></div></div>
-</section>
-<section class="plan">
-  <div class="plan-body">
-    <p class="plan-num">06 / 06</p>
-    <h2>Projets d'élèves en vibe coding</h2>
-    <p class="plan-note">Ce que produisent des designers à qui l'on donne la main sur le code : des interfaces qu'aucun gabarit n'aurait proposées.</p>
-    <a class="plan-link" href="https://app.notion.com/3d736514d2d580e59f70e923dad54bb6" target="_blank" rel="noopener">
-      Lire sur Notion
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="8 7 17 7 17 16"></polyline></svg>
-    </a>
-  </div>
-  <div class="plan-art"><div class="art-grid" data-art="grid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-</section>
-
-<section class="finale">
-  <p class="reveal" id="reveal">C'est cool quand même</p>
 </section>
 
 <!-- The prompt handed to the visitor. Kept in the DOM rather than in a JS
@@ -1171,24 +967,6 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
       revealEl.appendChild(span);
     });
 
-    // La phrase de fin se joue à l'arrivée de sa section, et non plus dans
-    // la timeline du héros : elle a quitté le milieu du parcours pour en
-    // devenir la dernière image.
-    gsap.from(letters, {
-      yPercent: 120,
-      opacity: 0,
-      duration: 0.6,
-      ease: 'power3.out',
-      stagger: 0.035,
-      scrollTrigger: {
-        trigger: '.finale',
-        start: 'top 62%',
-        // Pas de scrub : la phrase se joue d'un trait, et se rejoue à
-        // l'envers si l'on remonte.
-        toggleActions: 'play none none reverse'
-      }
-    });
-
     gsap.matchMedia().add('(min-width: 861px)', function () {
       // No pin: every visual is position:fixed already, so the corridor alone
       // gives the timeline something to scrub against. That sidesteps the
@@ -1197,15 +975,10 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         scrollTrigger: {
           trigger: '#corridor',
           start: 'top top',
-          // La plage animée s'arrête bien avant la fin du couloir : les 80vh
-          // restants laissent au rattrapage le temps de se poser avant que
-          // le premier plan n'arrive. Sans cette marge, l'escalier traînait
-          // derrière le défilement pendant que le plan, lui, était déjà en
-          // place — et les deux se chevauchaient.
-          end: '+=240%',
-          // Un rattrapage court : à une seconde, l'escalier était toujours
-          // en retard d'un geste sur le doigt.
-          scrub: 0.4
+          // La plage animée s'arrête avant la fin du couloir : le reste est
+          // du temps mort, volontairement.
+          end: '+=300%',
+          scrub: 1
         }
       });
 
@@ -1219,129 +992,17 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
         // Second temps : les colonnes blanches montent et recouvrent le
         // noir, chacune plus tard que sa voisine de gauche.
-        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.07, duration: 0.5 }, 1.05);
+        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1)
+
+        // La ligne arrive une fois le blanc posé.
+        .from(letters, {
+          yPercent: 120,
+          opacity: 0,
+          duration: 0.5,
+          ease: 'power3.out',
+          stagger: 0.035
+        }, 1.85);
     });
-  }
-
-  /* ------------------------------------------------------------------ */
-  /* Les illustrations des plans                                         */
-  /* ------------------------------------------------------------------ */
-  if (window.gsap && window.ScrollTrigger) {
-    // Une plage commune : l'illustration se joue pendant que son plan
-    // traverse l'écran, et se rejoue à l'envers si l'on remonte.
-    function whileVisible(el, extra) {
-      var base = { trigger: el.closest('.plan'), start: 'top 78%', end: 'center 45%', scrub: 0.8 };
-      for (var k in extra) base[k] = extra[k];
-      return base;
-    }
-
-    // 02 · des aplats dispersés qui se rangent en colonne. Les couleurs
-    // sont celles de Figma, puisque c'est le sujet du plan.
-    var snap = document.querySelector('[data-art="snap"]');
-    if (snap) {
-      var FIGMA = ['#F24E1E', '#FF7262', '#A259FF', '#1ABCFE', '#0ACF83'];
-      var bars = snap.querySelectorAll('i');
-      bars.forEach(function (el, i) {
-        el.style.top = (i * 19 + 5) + '%';
-        el.style.background = FIGMA[i];
-      });
-      gsap.from(bars, {
-        // Des fonctions, donc un tirage par barre : sans les parenthèses,
-        // les cinq partiraient du même point.
-        x: function () { return gsap.utils.random(-160, 160); },
-        y: function () { return gsap.utils.random(-110, 110); },
-        rotate: function () { return gsap.utils.random(-30, 30); },
-        opacity: 0,
-        ease: 'none',
-        stagger: 0.08,
-        scrollTrigger: whileVisible(snap)
-      });
-    }
-
-    // 03 · trois panneaux qui viennent se recouvrir, comme le fait la page
-    // elle-même quelques écrans plus haut.
-    var stack = document.querySelector('[data-art="stack"]');
-    if (stack) {
-      var panels = stack.querySelectorAll('i');
-      gsap.from(panels, {
-        yPercent: function (i) { return 26 - i * 13; },
-        xPercent: function (i) { return 18 - i * 9; },
-        opacity: 0,
-        ease: 'none',
-        stagger: 0.12,
-        scrollTrigger: whileVisible(stack)
-      });
-    }
-
-    // 04 · les courbes se tracent au défilement. Le tracé progressif tient
-    // au décalage du pointillé, sans plugin : on fixe un tiret de la
-    // longueur du chemin, et on le fait glisser jusqu'à zéro.
-    var curves = document.querySelector('[data-art="curves"]');
-    if (curves) {
-      var paths = curves.querySelectorAll('path');
-      paths.forEach(function (path) {
-        var len = path.getTotalLength();
-        gsap.set(path, { strokeDasharray: len, strokeDashoffset: len });
-      });
-      gsap.to(paths, {
-        strokeDashoffset: 0,
-        ease: 'none',
-        stagger: 0.16,
-        scrollTrigger: whileVisible(curves)
-      });
-      gsap.from(curves.querySelector('circle'), {
-        scale: 0,
-        transformOrigin: '50% 50%',
-        ease: 'none',
-        scrollTrigger: whileVisible(curves)
-      });
-    }
-
-    // 05 · le bloc rejoint sa destination pendant que la jauge se remplit.
-    var ship = document.querySelector('[data-art="ship"]');
-    if (ship) {
-      var track = ship.querySelector('.track');
-      var box = ship.querySelector('.box');
-      gsap.to(box, {
-        // Fonction plutôt que valeur : la distance dépend de la largeur
-        // rendue, qui change avec la fenêtre.
-        x: function () { return track.clientWidth - box.offsetWidth - 18; },
-        ease: 'none',
-        scrollTrigger: whileVisible(ship, { invalidateOnRefresh: true })
-      });
-      gsap.to(ship.querySelector('.bar i'), {
-        width: '100%',
-        ease: 'none',
-        scrollTrigger: whileVisible(ship)
-      });
-    }
-
-    // 06 · la grille se remplit par lots plutôt qu'une tuile à la fois.
-    var grid = document.querySelector('[data-art="grid"]');
-    if (grid) {
-      ScrollTrigger.batch(grid.querySelectorAll('i'), {
-        start: 'top 88%',
-        onEnter: function (batch) {
-          gsap.to(batch, {
-            opacity: 1,
-            scale: 1,
-            duration: reduced ? 0.2 : 0.5,
-            ease: 'power2.out',
-            stagger: reduced ? 0 : 0.07,
-            overwrite: true
-          });
-        }
-      });
-      gsap.set(grid.querySelectorAll('i'), { scale: 0.7 });
-    }
-
-
-    // Les hauteurs dépendent des polices, qui arrivent après le premier
-    // rendu : sans ce recalcul, les déclencheurs restent calés sur des
-    // positions périmées.
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
-    }
   }
 
   /* ------------------------------------------------------------------ */
