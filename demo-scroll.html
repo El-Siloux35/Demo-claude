@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scroll</title>
+<style>
+  :root {
+    --ground: #ffffff;
+    --surface: #f1f1f1;
+    --ink: #111111;
+    --ink-dim: #6e6e6e;
+    --accent: #161616;
+    --line: rgba(17,17,17,0.14);
+    --dark: #0d0d0d;
+    --dark-ink: #f2f2f2;
+    --dark-dim: #8f8f8f;
+    --font-display: 'Neue Haas Grotesk Display Pro', 'NHaasGroteskDSPro', 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0a0a0a;
+      --surface: #161616;
+      --ink: #f2f2f2;
+      --ink-dim: #9a9a9a;
+      --accent: #ececec;
+      --line: rgba(242,242,242,0.16);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* La barre reste en vue sur une page longue : collante plutôt
+     qu'étirée sur toute la hauteur du document. */
+  .sidebar {
+    position: sticky;
+    top: 0;
+    flex: 0 0 auto;
+    width: 216px;
+    height: 100vh;
+    padding: clamp(20px, 3vw, 30px) 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    border-right: 1px solid var(--line);
+    background: var(--ground);
+    z-index: 12;
+  }
+  .home-link {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+  .home-link:hover { color: var(--ink); }
+  .side-nav-title { font-size: 17px; font-weight: 500; letter-spacing: -0.015em; margin: 0 0 10px; }
+  .side-nav { display: flex; flex-direction: column; }
+  .side-nav a {
+    display: block;
+    border-top: 1px solid var(--line);
+    padding: 11px 0;
+    font-size: 14.5px;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition-property: color, border-color, padding-inline-start;
+    transition-duration: 200ms;
+  }
+  .side-nav a:last-child { border-bottom: 1px solid var(--line); }
+  .side-nav a:hover { color: var(--ink); border-top-color: var(--ink); padding-inline-start: 9px; }
+  .side-nav a:last-child:hover { border-bottom-color: var(--ink); }
+  .side-nav a[aria-current="page"] { color: var(--ink); font-weight: 500; }
+
+  main.content { flex: 1; min-width: 0; }
+
+  /* --- Jauge de progression, pilotée par onUpdate ------------------- */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 216px;
+    right: 0;
+    height: 3px;
+    background: var(--line);
+    z-index: 20;
+  }
+  .progress i {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+  }
+
+  /* --- En-tête ------------------------------------------------------ */
+  header.intro {
+    padding: clamp(28px, 5vw, 70px) clamp(20px, 4vw, 56px) clamp(20px, 3vw, 40px);
+    max-width: 62ch;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+    margin: 0 0 8px;
+  }
+  h1 {
+    font-weight: 500;
+    font-size: clamp(22px, 3.2vw, 31px);
+    letter-spacing: -0.025em;
+    margin: 0 0 12px;
+    text-wrap: balance;
+  }
+  header.intro p { color: var(--ink-dim); font-size: 14px; line-height: 1.7; margin: 0; }
+  header.intro b { color: var(--ink); font-weight: 500; }
+
+  /* --- Une section par mécanisme ------------------------------------ */
+  .demo {
+    min-height: 100vh;
+    padding: clamp(28px, 5vw, 64px) clamp(20px, 4vw, 56px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 30px;
+    border-top: 1px solid var(--line);
+  }
+  .demo.tinted { background: var(--surface); }
+  .demo.inverted { background: var(--dark); color: var(--dark-ink); border-top-color: #262626; }
+  .demo.inverted .label { color: var(--dark-ink); }
+  .demo.inverted .note, .demo.inverted .readout { color: var(--dark-dim); }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .demo h2 {
+    font-weight: 500;
+    font-size: clamp(19px, 2.6vw, 26px);
+    letter-spacing: -0.02em;
+    margin: 8px 0 0;
+    max-width: 24ch;
+    text-wrap: balance;
+  }
+  .note { font-size: 13.5px; line-height: 1.65; color: var(--ink-dim); margin: 0; max-width: 54ch; }
+  .readout {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-dim);
+    margin: 0;
+  }
+  .readout b { color: inherit; font-weight: 500; }
+  .demo.inverted .readout b { color: var(--dark-ink); }
+
+  .frame {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 250px;
+  }
+
+  /* --- Formes ------------------------------------------------------- */
+  .square {
+    width: 150px;
+    height: 150px;
+    background: var(--ink);
+  }
+  .ring {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 14px solid var(--dark-ink);
+  }
+  .bars { display: flex; align-items: flex-end; gap: 16px; height: 190px; }
+  .bars i { display: block; width: 58px; background: var(--ink); height: 100%; transform-origin: bottom; transform: scaleY(0.08); }
+
+  .dots { display: flex; gap: 26px; align-items: center; }
+  .dots i {
+    display: block;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+  }
+  .dots i.on { background: var(--ink); }
+
+  /* Défilement horizontal : la piste est plus large que l'écran et se
+     déplace latéralement pendant que la page défile verticalement. */
+  .rail { width: 100%; overflow: hidden; }
+  .rail-inner { display: flex; gap: 34px; width: max-content; padding: 10px 0; }
+  .rail-inner i {
+    display: block;
+    width: 190px;
+    height: 190px;
+    background: var(--ink);
+    flex: 0 0 auto;
+  }
+  .rail-inner i:nth-child(even) { background: transparent; border: 3px solid var(--ink); }
+
+  .grid-batch {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+    width: 100%;
+    max-width: 680px;
+  }
+  .grid-batch i { display: block; aspect-ratio: 1; background: var(--dark-ink); opacity: 0; }
+
+  .unsupported { color: var(--ink-dim); font-size: 14px; padding: 40px 0; }
+
+  /* --- Encart prompt ------------------------------------------------ */
+  .prompt-tab {
+    position: fixed; right: 16px; bottom: 16px; z-index: 30;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: #000; color: #f2f2f2; border: 0; border-radius: 999px;
+    padding: 9px 14px; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  }
+  .prompt-tab:hover { background: #1a1a1a; }
+  .prompt-panel {
+    position: fixed; right: 16px; bottom: 16px; z-index: 31;
+    width: min(560px, calc(100vw - 32px)); max-height: min(70vh, 560px);
+    overflow: auto; background: #000; color: #e8e8e8;
+    border-radius: 12px; padding: 14px 16px 18px;
+  }
+  .prompt-panel[hidden] { display: none; }
+  .prompt-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .prompt-panel-head h2 {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 500; margin: 0; color: #9a9a9a;
+  }
+  .prompt-panel-actions { display: flex; align-items: center; gap: 8px; }
+  .prompt-copy-btn, .prompt-close-btn {
+    background: #1a1a1a; color: #e8e8e8; border: 0; border-radius: 7px;
+    padding: 5px 10px; font-family: var(--font-mono); font-size: 11px; cursor: pointer;
+  }
+  .prompt-copy-btn:hover, .prompt-close-btn:hover { background: #262626; }
+  .prompt-close-btn { padding: 5px 9px; }
+  .prompt-panel pre { margin: 0; white-space: pre-wrap; font-family: var(--font-mono); font-size: 12px; line-height: 1.65; }
+
+  @media (max-width: 720px) {
+    body { flex-direction: column; align-items: stretch; }
+    .sidebar { position: static; width: 100%; height: auto; border-right: 0; border-bottom: 1px solid var(--line); gap: 14px; }
+    .side-nav-title { display: none; }
+    .side-nav { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+    .side-nav a, .side-nav a:last-child { border: 0; padding: 5px 9px; font-size: 13px; }
+    .progress { left: 0; }
+    .grid-batch { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .side-nav a { transition-duration: 1ms; }
+  }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<aside class="sidebar">
+  <a class="home-link" href="index.html">&larr; Accueil</a>
+  <p class="side-nav-title">Démos</p>
+  <nav class="side-nav">
+    <a href="demo-voix.html">Voix</a>
+    <a href="demo-geste.html">Geste</a>
+    <a href="demo-regard.html">Regard</a>
+    <a href="demo-carte.html">Carte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
+    <a href="demo-objet.html">Objet 3D</a>
+    <a href="demo-texte.html">Animation texte</a>
+    <a href="demo-tambour.html">Tambour</a>
+    <a href="demo-scroll.html" aria-current="page">Scroll</a>
+  </nav>
+</aside>
+
+<main class="content">
+  <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+
+  <header class="intro">
+    <p class="eyebrow">GSAP ScrollTrigger</p>
+    <h1>Six façons de lier une animation au défilement.</h1>
+    <p>Des formes volontairement nues — un carré, un cercle, des barres — pour qu'on voie le mécanisme et non le décor. Chaque section porte <b>le nom anglais de l'option</b>, celui qu'il faut écrire pour l'obtenir. Le relevé sous chaque forme affiche ce que ScrollTrigger rapporte en direct.</p>
+  </header>
+
+  <!-- 1 ------------------------------------------------------------ -->
+  <section class="demo" id="s-scrub">
+    <div>
+      <p class="label">scrub</p>
+      <h2>L'animation devient la barre de défilement.</h2>
+    </div>
+    <div class="frame"><div class="square" id="scrubSquare"></div></div>
+    <p class="readout" id="scrubOut">progression <b>0.00</b></p>
+    <p class="note">Sans <code>scrub</code>, une animation se déclenche et se joue seule. Avec, sa tête de lecture est collée à la position du défilement : remontez, elle revient en arrière. La valeur numérique, ici <b>1</b>, est le retard de rattrapage en secondes, ce qui donne au mouvement son inertie.</p>
+  </section>
+
+  <!-- 2 ------------------------------------------------------------ -->
+  <section class="demo tinted" id="s-pin">
+    <div>
+      <p class="label">pin</p>
+      <h2>La section reste, le contenu avance.</h2>
+    </div>
+    <div class="frame">
+      <div class="bars" id="pinBars"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <p class="readout" id="pinOut">épinglé <b>non</b></p>
+    <p class="note">La section se fige à l'écran le temps que le défilement parcoure sa plage, et c'est son contenu qui progresse. ScrollTrigger insère pour cela un espaceur de la hauteur voulue : c'est ce qui évite que le reste de la page ne remonte d'un coup, et la raison pour laquelle on épingle rarement autre chose qu'un conteneur.</p>
+  </section>
+
+  <!-- 3 ------------------------------------------------------------ -->
+  <section class="demo inverted" id="s-toggle">
+    <div>
+      <p class="label">toggleActions</p>
+      <h2>Quatre moments, quatre ordres.</h2>
+    </div>
+    <div class="frame"><div class="ring" id="toggleRing"></div></div>
+    <p class="readout" id="toggleOut">état <b>—</b></p>
+    <p class="note">Quand on n'attache pas l'animation au défilement, il faut dire quoi faire à chacun des quatre passages : entrée, sortie, entrée en remontant, sortie en remontant. Ici <b>play none none reverse</b> : le cercle se dessine en descendant et se défait en remontant. Remontez pour le voir.</p>
+  </section>
+
+  <!-- 4 ------------------------------------------------------------ -->
+  <section class="demo tinted" id="s-snap">
+    <div>
+      <p class="label">snap</p>
+      <h2>Le défilement se pose sur des crans.</h2>
+    </div>
+    <div class="frame"><div class="dots" id="snapDots"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <p class="readout" id="snapOut">cran <b>1</b> / 5</p>
+    <p class="note">Lâchez le défilement entre deux crans : il rejoint le plus proche au lieu de rester entre deux. Utile pour une série d'étapes qu'on ne veut jamais voir à moitié. À manier avec retenue, car reprendre la main sur le défilement d'un visiteur se remarque toujours.</p>
+  </section>
+
+  <!-- 5 ------------------------------------------------------------ -->
+  <section class="demo" id="s-rail">
+    <div>
+      <p class="label">containerAnimation</p>
+      <h2>Descendre fait avancer de côté.</h2>
+    </div>
+    <div class="frame rail">
+      <div class="rail-inner" id="railInner"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <p class="readout" id="railOut">avancée <b>0 %</b></p>
+    <p class="note">La piste est plus large que l'écran. La section est épinglée, et le défilement vertical est converti en translation horizontale. Le visiteur ne change pas de geste : c'est le même scroll, relié à un autre axe.</p>
+  </section>
+
+  <!-- 6 ------------------------------------------------------------ -->
+  <section class="demo inverted" id="s-batch">
+    <div>
+      <p class="label">ScrollTrigger.batch()</p>
+      <h2>Ce qui entre ensemble arrive ensemble.</h2>
+    </div>
+    <div class="frame">
+      <div class="grid-batch" id="batchGrid"></div>
+    </div>
+    <p class="readout" id="batchOut">apparus <b>0</b> / 24</p>
+    <p class="note">Douze déclencheurs individuels feraient entrer douze carrés chacun pour soi, et la grille arriverait en bouillie. <code>batch</code> regroupe ceux qui franchissent le seuil dans la même image et les anime d'un seul geste, décalés entre eux. Une seule animation là où il y en aurait eu douze.</p>
+  </section>
+
+  <section class="demo" style="min-height:60vh">
+    <p class="readout">fin de la démonstration</p>
+  </section>
+</main>
+
+<button class="prompt-tab" id="promptTab" type="button" aria-expanded="false" aria-controls="promptPanel">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+  Voir le prompt
+</button>
+<div class="prompt-panel" id="promptPanel" hidden>
+  <div class="prompt-panel-head">
+    <h2>Prompt utilisé</h2>
+    <div class="prompt-panel-actions">
+      <button class="prompt-copy-btn" id="promptCopyBtn" type="button">Copier</button>
+      <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
+    </div>
+  </div>
+  <pre id="promptText">Construis une page HTML autonome qui démontre six mécanismes de GSAP ScrollTrigger, une section plein écran par mécanisme.
+
+N'utilise que des formes nues — un carré, un cercle, des barres, une grille de carrés — et des fonds unis qui alternent entre clair, gris et noir, pour que les limites de section se voient et que le mécanisme ne soit pas noyé sous du décor.
+
+Les six : scrub, qui colle la tête de lecture au défilement ; pin, qui fige la section pendant que son contenu avance ; toggleActions, qui donne un ordre à chacun des quatre passages ; snap, qui fait se poser le défilement sur des crans ; containerAnimation, qui convertit le défilement vertical en translation horizontale ; et ScrollTrigger.batch, qui regroupe les éléments franchissant le seuil dans la même image.
+
+Sous chaque forme, affiche en direct ce que ScrollTrigger rapporte : progression, état épinglé, cran courant, nombre d'éléments apparus. C'est ce relevé qui rend le mécanisme lisible plutôt que magique.
+
+Ajoute une jauge de progression fixe en haut, alimentée par onUpdate et self.progress.
+
+Chaque section porte le nom anglais exact de l'option, celui qu'il faut écrire pour l'obtenir. Respecte prefers-reduced-motion.</pre>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.15.0/ScrollTrigger.min.js"></script>
+<script>
+(function () {
+  if (!window.gsap || !window.ScrollTrigger) {
+    document.querySelector('main.content').insertAdjacentHTML('afterbegin',
+      '<p class="unsupported">GSAP n\'a pas pu se charger (connexion nécessaire au premier chargement). Rechargez la page.</p>');
+    return;
+  }
+  gsap.registerPlugin(ScrollTrigger);
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------------------------------------------------------
+     Jauge de progression : un déclencheur sur la page entière, dont
+     on ne garde que la progression rapportée à chaque mise à jour.
+     --------------------------------------------------------------- */
+  var bar = document.getElementById('progressBar');
+  ScrollTrigger.create({
+    trigger: document.body,
+    start: 'top top',
+    end: 'bottom bottom',
+    onUpdate: function (self) {
+      bar.style.width = (self.progress * 100).toFixed(1) + '%';
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     1. scrub — la tête de lecture suit le défilement
+     --------------------------------------------------------------- */
+  var scrubOut = document.getElementById('scrubOut');
+  gsap.to('#scrubSquare', {
+    rotate: 225,
+    scale: 0.55,
+    borderRadius: '50%',
+    ease: 'none',
+    scrollTrigger: {
+      trigger: '#s-scrub',
+      start: 'top 70%',
+      end: 'bottom 30%',
+      // Une seconde de rattrapage : le carré poursuit le défilement au lieu
+      // d'y coller image par image, ce qui donne son inertie au mouvement.
+      scrub: 1,
+      onUpdate: function (self) {
+        scrubOut.innerHTML = 'progression <b>' + self.progress.toFixed(2) + '</b>';
+      }
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     2. pin — la section tient, son contenu progresse
+     --------------------------------------------------------------- */
+  var pinOut = document.getElementById('pinOut');
+  gsap.to('#pinBars i', {
+    scaleY: 1,
+    ease: 'none',
+    stagger: 0.4,
+    scrollTrigger: {
+      trigger: '#s-pin',
+      start: 'top top',
+      end: '+=140%',
+      scrub: 0.6,
+      pin: true,
+      // Sans cela, la mesure d'épinglage est prise une image trop tard et la
+      // section sursaute au moment où elle se fige.
+      anticipatePin: 1,
+      onToggle: function (self) {
+        pinOut.innerHTML = 'épinglé <b>' + (self.isActive ? 'oui' : 'non') + '</b>';
+      }
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     3. toggleActions — quatre passages, quatre ordres
+     --------------------------------------------------------------- */
+  var toggleOut = document.getElementById('toggleOut');
+  var ringTween = gsap.from('#toggleRing', {
+    scale: 0.2,
+    rotate: -120,
+    opacity: 0,
+    duration: 0.9,
+    ease: 'power3.out',
+    paused: true
+  });
+  ScrollTrigger.create({
+    trigger: '#s-toggle',
+    start: 'top 60%',
+    end: 'bottom 40%',
+    animation: ringTween,
+    // entrée · sortie · entrée en remontant · sortie en remontant
+    toggleActions: 'play none none reverse',
+    onEnter: function () { toggleOut.innerHTML = 'état <b>play</b> — entrée'; },
+    onLeaveBack: function () { toggleOut.innerHTML = 'état <b>reverse</b> — sortie en remontant'; }
+  });
+
+  /* ---------------------------------------------------------------
+     4. snap — le défilement se pose sur des crans
+     --------------------------------------------------------------- */
+  var snapOut = document.getElementById('snapOut');
+  var dots = document.querySelectorAll('#snapDots i');
+  ScrollTrigger.create({
+    trigger: '#s-snap',
+    start: 'top top',
+    end: '+=160%',
+    pin: true,
+    scrub: 0.5,
+    // Cinq crans, donc quatre intervalles : 1/4 de la plage entre chacun.
+    snap: reduced ? false : { snapTo: 1 / 4, duration: 0.35, delay: 0.06 },
+    onUpdate: function (self) {
+      var step = Math.round(self.progress * 4);
+      dots.forEach(function (d, i) { d.classList.toggle('on', i <= step); });
+      snapOut.innerHTML = 'cran <b>' + (step + 1) + '</b> / 5';
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     5. containerAnimation — le vertical devient horizontal
+     --------------------------------------------------------------- */
+  var railOut = document.getElementById('railOut');
+  var rail = document.getElementById('railInner');
+  function railDistance() {
+    return Math.max(0, rail.scrollWidth - rail.parentElement.clientWidth);
+  }
+  gsap.to(rail, {
+    x: function () { return -railDistance(); },
+    ease: 'none',
+    scrollTrigger: {
+      trigger: '#s-rail',
+      start: 'top top',
+      end: function () { return '+=' + (railDistance() + window.innerHeight * 0.5); },
+      pin: true,
+      scrub: 0.6,
+      // La distance dépend de la largeur rendue : sans recalcul, un
+      // redimensionnement laisse la piste s'arrêter avant sa fin.
+      invalidateOnRefresh: true,
+      onUpdate: function (self) {
+        railOut.innerHTML = 'avancée <b>' + Math.round(self.progress * 100) + ' %</b>';
+      }
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     6. batch — ce qui entre ensemble arrive ensemble
+     --------------------------------------------------------------- */
+  var batchGrid = document.getElementById('batchGrid');
+  var batchOut = document.getElementById('batchOut');
+  var TILES = 24;
+  for (var i = 0; i < TILES; i++) batchGrid.appendChild(document.createElement('i'));
+  var shown = 0;
+
+  ScrollTrigger.batch('#batchGrid i', {
+    start: 'top 88%',
+    onEnter: function (batch) {
+      shown += batch.length;
+      batchOut.innerHTML = 'apparus <b>' + shown + '</b> / ' + TILES +
+        ' &middot; ce lot : ' + batch.length;
+      gsap.to(batch, {
+        opacity: 1,
+        duration: reduced ? 0.2 : 0.5,
+        ease: 'power2.out',
+        stagger: reduced ? 0 : 0.06,
+        overwrite: true
+      });
+    }
+  });
+
+  // Les hauteurs dépendent des polices, qui arrivent après le premier rendu :
+  // sans ce recalcul, tous les déclencheurs sont calés sur des positions
+  // périmées.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(function () { ScrollTrigger.refresh(); });
+  }
+})();
+</script>
+
+<script>
+(function () {
+  var tab = document.getElementById('promptTab');
+  var panel = document.getElementById('promptPanel');
+  var closeBtn = document.getElementById('promptCloseBtn');
+  var copyBtn = document.getElementById('promptCopyBtn');
+  var textEl = document.getElementById('promptText');
+  function setOpen(open) { panel.hidden = !open; tab.setAttribute('aria-expanded', String(open)); }
+  tab.addEventListener('click', function () { setOpen(panel.hidden); });
+  closeBtn.addEventListener('click', function () { setOpen(false); });
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  copyBtn.addEventListener('click', function () {
+    var text = textEl.textContent;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).catch(function () { fallbackCopy(text); });
+    } else { fallbackCopy(text); }
+    copyBtn.textContent = 'Copié';
+    setTimeout(function () { copyBtn.textContent = 'Copier'; }, 1600);
+  });
+})();
+</script>
+</body>
+</html>
