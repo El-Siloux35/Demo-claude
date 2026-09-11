@@ -436,12 +436,12 @@
   /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
      the finished line stays on screen instead of being covered by the next
      section the instant it lands. */
-  /* 320vh de couloir pour 300vh de timeline. La pause qui suit est courte,
-     juste de quoi laisser le blanc se poser avant le premier plan. Elle
-     durait un écran et demi tant que la phrase de fin s'y jouait ; celle-ci
-     étant passée en fin de page, ce temps mort n'avait plus rien à
-     montrer. */
-  #corridor { height: 320vh; }
+  /* 280vh de couloir pour 240vh de plage animée : 40vh de marge, le temps
+     que le rattrapage du scrub se pose. Elle peut rester courte parce que
+     l'escalier finit blanc et que le premier plan est blanc aussi : la
+     couture ne se voit pas. Trop longue, elle donnait un écran de vide ;
+     trop courte, l'escalier était encore en route quand le plan arrivait. */
+  #corridor { height: 280vh; }
 
   /* Above the columns, so the section that follows scrolls over the black
      they leave behind rather than under it. */
@@ -1197,10 +1197,15 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
         scrollTrigger: {
           trigger: '#corridor',
           start: 'top top',
-          // La plage animée s'arrête avant la fin du couloir : le reste est
-          // du temps mort, volontairement.
-          end: '+=300%',
-          scrub: 1
+          // La plage animée s'arrête bien avant la fin du couloir : les 80vh
+          // restants laissent au rattrapage le temps de se poser avant que
+          // le premier plan n'arrive. Sans cette marge, l'escalier traînait
+          // derrière le défilement pendant que le plan, lui, était déjà en
+          // place — et les deux se chevauchaient.
+          end: '+=240%',
+          // Un rattrapage court : à une seconde, l'escalier était toujours
+          // en retard d'un geste sur le doigt.
+          scrub: 0.4
         }
       });
 
@@ -1214,7 +1219,7 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
         // Second temps : les colonnes blanches montent et recouvrent le
         // noir, chacune plus tard que sa voisine de gauche.
-        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1);
+        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.07, duration: 0.5 }, 1.05);
     });
   }
 
