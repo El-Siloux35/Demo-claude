@@ -436,12 +436,12 @@
   /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
      the finished line stays on screen instead of being covered by the next
      section the instant it lands. */
-  /* 420vh de couloir pour 300vh de timeline. Les 120vh restants ne jouent
-     rien : c'est la pause qui laisse le temps de lire la phrase avant que
-     la section suivante ne monte la recouvrir. Séparer la longueur du
-     couloir de la plage animée est ce qui permet de régler ce temps de
-     lecture sans retoucher une seule animation. */
-  #corridor { height: 420vh; }
+  /* 320vh de couloir pour 300vh de timeline. La pause qui suit est courte,
+     juste de quoi laisser le blanc se poser avant le premier plan. Elle
+     durait un écran et demi tant que la phrase de fin s'y jouait ; celle-ci
+     étant passée en fin de page, ce temps mort n'avait plus rien à
+     montrer. */
+  #corridor { height: 320vh; }
 
   /* Above the columns, so the section that follows scrolls over the black
      they leave behind rather than under it. */
@@ -462,6 +462,35 @@
   /* The lagging cursor, on top of everything. Difference blending means one
      element reads correctly on the white page and on the black columns, with
      nothing to switch. */
+  /* La pastille du prompt, qui suit le curseur pendant qu'on survole le
+     héros. Elle garde ses propres couleurs, sombre sur clair, plutôt que
+     de dépendre des jetons du héros : c'est une étiquette flottante, pas
+     un élément de la page. */
+  .pill {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: #0d0d0d;
+    color: #f2f2f2;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 450;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(-200px, -200px, 0);
+    transition: opacity 220ms ease;
+  }
+  .pill[data-show="1"] { opacity: 1; }
+  .pill[data-copied="1"] { background: #1d7a4c; }
+
   .cursor {
     position: fixed;
     top: 0;
