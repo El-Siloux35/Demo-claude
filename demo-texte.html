@@ -279,7 +279,7 @@
 <main class="content">
   <header class="intro">
     <p class="eyebrow">GSAP SplitText</p>
-    <h1>Treize animations de texte, et leur nom.</h1>
+    <h1>Quatorze animations de texte, et leur nom.</h1>
     <p>Chaque carte porte le <b>nom anglais de l'effet</b>. Ce nom n'est pas décoratif : c'est le terme que les développeurs emploient entre eux, celui que la documentation utilise, et celui qu'il faut écrire pour obtenir l'effet quand on demande le code à une IA. « Fais un <b>line mask reveal</b> sur le titre » donne le bon résultat du premier coup ; « fais apparaître le titre joliment » ne le donne jamais.</p>
     <p>Cliquez une carte pour rejouer son animation.</p>
   </header>
@@ -304,7 +304,7 @@
       <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
     </div>
   </div>
-  <pre id="promptText">Construis une page HTML autonome qui présente, sous forme de galerie, treize animations de texte réalisées avec GSAP et son plugin SplitText.
+  <pre id="promptText">Construis une page HTML autonome qui présente, sous forme de galerie, quatorze animations de texte réalisées avec GSAP et son plugin SplitText.
 
 Cette page s'adresse à des étudiants. L'objectif n'est pas d'expliquer le code, mais de leur donner le vocabulaire : chaque carte porte le nom anglais de l'effet, celui qui figure dans la documentation et qu'il faut écrire pour obtenir cet effet quand on demande du code à une IA. N'affiche donc aucun extrait de code, seulement l'animation, son nom, et une phrase disant à quoi elle sert.
 
@@ -408,6 +408,26 @@ Charge GSAP et SplitText en version 3.13 ou supérieure, où le plugin est deven
       note: 'L\'ease « elastic » fait osciller la lettre autour de sa position finale. Très marqué : une seule ligne suffit, sinon la page devient agitée.',
       split: { type: 'chars,words' },
       play: function (s) { return gsap.from(s.chars, { opacity: 0, y: -55, duration: 1.1, ease: 'elastic.out(1, 0.45)', stagger: 0.028 }); }
+    },
+    {
+      name: 'Scatter in',
+      text: 'Chaque mot arrive de sa propre direction, sous son propre angle.',
+      note: 'Le piège est ici : écrite en valeur, une fonction aléatoire n\'est évaluée qu\'une fois et tous les mots reçoivent le même tirage. Écrite en fonction, elle est rappelée pour chaque élément, et chacun obtient le sien. C\'est la différence entre une phrase qui glisse en bloc et une phrase qui se rassemble.',
+      split: { type: 'words' },
+      play: function (s) {
+        return gsap.from(s.words, {
+          opacity: 0,
+          // Des fonctions, et non des valeurs : GSAP les rappelle pour chaque
+          // mot, qui reçoit donc son propre tirage.
+          x: function () { return gsap.utils.random(-140, 140); },
+          y: function () { return gsap.utils.random(-90, 90); },
+          rotate: function () { return gsap.utils.random(-50, 50); },
+          scale: function () { return gsap.utils.random(0.4, 1.5); },
+          duration: 0.9,
+          ease: 'power3.out',
+          stagger: 0.05
+        });
+      }
     },
     {
       name: 'Ignore nested elements',
