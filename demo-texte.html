@@ -186,6 +186,24 @@
     perspective: 500px;
   }
 
+  /* Une seule carte montre les boîtes que le plugin fabrique : c'est celle
+     qui démontre « ignore », où l'on doit voir quel morceau a été découpé et
+     lequel est resté d'un bloc. Le trait est franc, pas une teinte à 9 %
+     d'opacité qui ne se verrait pas. */
+  .anim[data-boxes] .anim-text { line-height: 2.3; }
+  .anim[data-boxes] .split-word {
+    outline: 1px dashed var(--ink-dim);
+    outline-offset: 4px;
+    border-radius: 7px;
+    margin: 0 3px;
+  }
+  .anim[data-boxes] sup {
+    color: var(--accent);
+    font-size: 0.6em;
+    font-weight: 600;
+    vertical-align: super;
+  }
+
   .anim-note {
     display: block;
     font-size: 12.5px;
@@ -261,7 +279,7 @@
 <main class="content">
   <header class="intro">
     <p class="eyebrow">GSAP SplitText</p>
-    <h1>Douze animations de texte, et leur nom.</h1>
+    <h1>Treize animations de texte, et leur nom.</h1>
     <p>Chaque carte porte le <b>nom anglais de l'effet</b>. Ce nom n'est pas décoratif : c'est le terme que les développeurs emploient entre eux, celui que la documentation utilise, et celui qu'il faut écrire pour obtenir l'effet quand on demande le code à une IA. « Fais un <b>line mask reveal</b> sur le titre » donne le bon résultat du premier coup ; « fais apparaître le titre joliment » ne le donne jamais.</p>
     <p>Cliquez une carte pour rejouer son animation.</p>
   </header>
@@ -286,7 +304,7 @@
       <button class="prompt-close-btn" id="promptCloseBtn" type="button" aria-label="Fermer">&times;</button>
     </div>
   </div>
-  <pre id="promptText">Construis une page HTML autonome qui présente, sous forme de galerie, douze animations de texte réalisées avec GSAP et son plugin SplitText.
+  <pre id="promptText">Construis une page HTML autonome qui présente, sous forme de galerie, treize animations de texte réalisées avec GSAP et son plugin SplitText.
 
 Cette page s'adresse à des étudiants. L'objectif n'est pas d'expliquer le code, mais de leur donner le vocabulaire : chaque carte porte le nom anglais de l'effet, celui qui figure dans la documentation et qu'il faut écrire pour obtenir cet effet quand on demande du code à une IA. N'affiche donc aucun extrait de code, seulement l'animation, son nom, et une phrase disant à quoi elle sert.
 
@@ -392,6 +410,22 @@ Charge GSAP et SplitText en version 3.13 ou supérieure, où le plugin est deven
       play: function (s) { return gsap.from(s.chars, { opacity: 0, y: -55, duration: 1.1, ease: 'elastic.out(1, 0.45)', stagger: 0.028 }); }
     },
     {
+      name: 'Ignore nested elements',
+      // Balisage et non texte simple : c'est tout l'objet de la démonstration,
+      // il faut de vrais éléments imbriqués à préserver.
+      html: 'Un mot garde son exposant<sup>1</sup> et son symbole<sup>&trade;</sup> intacts.',
+      note: 'Les pointillés montrent les boîtes fabriquées par le plugin. L\'option « ignore » désigne les descendants à ne pas toucher : sans elle, l\'exposant serait découpé avec le reste et perdrait sa balise, donc sa mise en forme.',
+      boxes: true,
+      split: { type: 'words', ignore: 'sup' },
+      play: function (s) {
+        // L'inclinaison n'est pas décorative : elle sépare visuellement les
+        // boîtes voisines, qu'un alignement parfait ferait lire comme une
+        // seule bande.
+        gsap.set(s.words, { rotate: function (i) { return (i % 2 ? 1 : -1) * (1.4 + (i % 3) * 0.9); } });
+        return gsap.from(s.words, { opacity: 0, y: 20, duration: 0.55, ease: 'power3.out', stagger: 0.07 });
+      }
+    },
+    {
       name: 'Wave loop',
       text: 'Les lettres ondulent sans fin.',
       note: 'Le seul effet en boucle de cette page. Il attire l\'œil en permanence, donc il coûte cher en attention : gardez-le pour un mot, jamais pour du contenu à lire.',
@@ -426,7 +460,8 @@ Charge GSAP et SplitText en version 3.13 ou supérieure, où le plugin est deven
 
     var text = document.createElement('span');
     text.className = 'anim-text';
-    text.textContent = a.text;
+    if (a.html) { text.innerHTML = a.html; } else { text.textContent = a.text; }
+    if (a.boxes) { card.setAttribute('data-boxes', ''); }
 
     var note = document.createElement('span');
     note.className = 'anim-note';
@@ -439,7 +474,15 @@ Charge GSAP et SplitText en version 3.13 ou supérieure, où le plugin est deven
 
     // aria: "auto" repose le texte complet en nom accessible, sinon un
     // lecteur d'écran épellerait les caractères un par un.
-    var conf = Object.assign({ aria: 'auto' }, a.split);
+    // Les classes ne servent qu'à la carte à boîtes : les autres animations
+    // visent directement les tableaux que le plugin renvoie. Les poser
+    // partout ne coûte rien et évite un cas particulier.
+    var conf = Object.assign({
+      aria: 'auto',
+      charsClass: 'split-char',
+      wordsClass: 'split-word',
+      linesClass: 'split-line'
+    }, a.split);
     var split = SplitText.create(text, conf);
 
     var entry = { def: a, split: split, tween: null };
