@@ -196,6 +196,13 @@
     perspective: 500px;
   }
 
+  /* SplitText fabrique des <div>. Ceux des mots reçoivent un display en
+     ligne, ceux des caractères non : laissés en bloc, chaque lettre tombe
+     sur sa propre ligne et le mot se lit à la verticale. On le pose donc
+     ici, et on interdit la coupure à l'intérieur d'un mot. */
+  .split-char { display: inline-block; }
+  .split-word { white-space: nowrap; }
+
   /* Une seule carte montre les boîtes que le plugin fabrique : c'est celle
      qui démontre « ignore », où l'on doit voir quel morceau a été découpé et
      lequel est resté d'un bloc. Le trait est franc, pas une teinte à 9 %
