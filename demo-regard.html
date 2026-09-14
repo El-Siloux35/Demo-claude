@@ -96,6 +96,24 @@
   .side-nav a:last-child:hover { border-bottom-color: var(--ink); }
   .side-nav a[aria-current="page"] { color: var(--ink); font-weight: 500; }
 
+  /* Les démos se rangent par famille : ce qu'on pilote au corps (caméra et
+     micro), ce qui tient de la 3D, et l'animation pure. Le titre de groupe
+     porte le filet qui ferme la famille précédente, et l'entrée qui le suit
+     rend le sien pour ne pas doubler le trait. */
+  .side-group {
+    margin: 0;
+    padding: 22px 0 9px;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .side-nav .side-group:first-child { border-top: 0; padding-top: 0; }
+  .side-group + a { border-top: 0; }
+
   main.content {
     flex: 1;
     min-width: 0;
@@ -369,14 +387,19 @@
   <a class="home-link" href="index.html">&larr; Accueil</a>
   <p class="side-nav-title">Démos</p>
   <nav class="side-nav">
+    <p class="side-group">Capté au corps</p>
     <a href="demo-voix.html">Voix</a>
     <a href="demo-geste.html">Geste</a>
-    <a href="demo-regard.html">Regard</a>
+    <a href="demo-regard.html" aria-current="page">Regard</a>
     <a href="demo-carte.html">Carte</a>
-    <a href="demo-carrousel.html">Carrousel</a>
+
+    <p class="side-group">Trois dimensions</p>
     <a href="demo-objet.html">Objet 3D</a>
-    <a href="demo-texte.html">Animation texte</a>
+    <a href="demo-carrousel.html">Carrousel</a>
     <a href="demo-tambour.html">Tambour</a>
+
+    <p class="side-group">Animation</p>
+    <a href="demo-texte.html">Animation texte</a>
     <a href="demo-scroll.html">Scroll</a>
   </nav>
 </aside>
