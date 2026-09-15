@@ -315,25 +315,24 @@
 
   /* --- Below the fold ------------------------------------------------ */
 
-  /* The scroll corridor. Nothing is drawn here: it exists to give the
-     timeline something to scrub against, which is why no pin is needed. */
-  /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
-     the finished line stays on screen instead of being covered by the next
-     section the instant it lands. */
-  /* 410vh de couloir pour 300vh de timeline. La section suivante commence
-     à entrer un écran avant la fin du couloir : il faut donc au moins
-     100vh au-delà de la plage animée, sans quoi la liste monterait pendant
-     que l'escalier grimpe encore. Les 10vh qui restent sont le souffle
-     entre la fin de l'escalier et l'arrivée des liens. */
-  #corridor { height: 410vh; }
+  /* Le couloir de défilement. Rien n'y est dessiné : il existe pour donner
+     prise au scrub, ce qui évite d'avoir à épingler quoi que ce soit.
+     460vh de couloir pour 300vh de timeline. Les 160vh restants ne jouent
+     rien : 60vh de pause pour parcourir les neuf liens que l'escalier vient
+     de découvrir, puis les 100vh pendant lesquels la phrase de fin monte
+     les recouvrir. Séparer la longueur du couloir de la plage animée est ce
+     qui permet de régler ce temps de lecture sans toucher aux animations. */
+  #corridor { height: 460vh; }
 
-  /* Above the columns, so the section that follows scrolls over the black
-     they leave behind rather than under it. */
+  /* La liste est ce que l'escalier découvre : elle attend derrière les
+     colonnes, déjà en place, au lieu de monter du bas. C'est ce qui
+     supprime l'écran blanc — une section de flux doit traverser une hauteur
+     d'écran avant d'être lisible, une couche fixe n'a aucun trajet à faire.
+     Pas de fond : le blanc est celui que les colonnes viennent de poser. */
   #next {
-    position: relative;
-    z-index: 6;
-    min-height: 100vh;
-    background: var(--light);
+    position: fixed;
+    inset: 0;
+    z-index: 5;
     color: var(--light-ink);
     padding: clamp(22px, 3.4vw, 52px);
     display: flex;
@@ -341,7 +340,12 @@
     /* Le bloc est centré dans la page ; les lignes restent alignées à
        gauche, sans quoi le nom et le capteur perdraient leur colonne. */
     justify-content: center;
+    /* Tant que l'escalier n'a pas fini, la couche couvre le héros : sans
+       cela ses liens happeraient les clics destinés à la zone du prompt.
+       La timeline lui rend ses clics une fois qu'elle est découverte. */
+    pointer-events: none;
   }
+  #next a { pointer-events: inherit; }
 
   /* The lagging cursor, on top of everything. Difference blending means one
      element reads correctly on the white page and on the black columns, with
@@ -382,6 +386,14 @@
     /* The columns need a scroll corridor the page no longer has room for,
        and the line they uncover goes with them. */
     .wipe, #corridor, .reveal { display: none; }
+    /* Sans escalier pour la découvrir, la liste redevient une section
+       ordinaire, et récupère les clics que la timeline lui aurait rendus. */
+    #next {
+      position: static;
+      min-height: 100vh;
+      background: var(--light);
+      pointer-events: auto;
+    }
   }
 
   @media (hover: none), (pointer: coarse) {
@@ -997,7 +1009,23 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
         // Second temps : les colonnes blanches montent et recouvrent le
         // noir, chacune plus tard que sa voisine de gauche.
-        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1);
+        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1)
+
+        // La liste se pose à la place qu'occupait la phrase : c'est elle,
+        // désormais, que l'escalier découvre. Elle n'arrive pas de nulle
+        // part, elle était déjà là, cachée sous le noir.
+        .from('#next .demos > *', {
+          y: 26,
+          opacity: 0,
+          duration: 0.5,
+          ease: 'power3.out',
+          stagger: 0.08
+        }, 1.8)
+
+        // Une fois découverte, elle redevient cliquable. En scrub, le set
+        // se rejoue à l'envers quand on remonte, et la couche relâche les
+        // clics avant de repasser au-dessus du héros.
+        .set('#next', { pointerEvents: 'auto' }, 2.15);
     });
 
     // La phrase ne fait plus partie de la timeline du couloir : elle a sa
