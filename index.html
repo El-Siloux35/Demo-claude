@@ -282,20 +282,25 @@
   .pill[data-show="1"] { opacity: 1; }
   .pill[data-copied="1"] { background: #1d7a4c; }
 
-  /* Sits between the columns and the section that follows: revealed by the
-     black they leave, and scrolled over by the content to come. */
+  /* Le mot de la fin. Il vient après la liste des démos : on parcourt
+     d'abord les liens, la phrase referme. C'est une section de flux comme
+     la précédente, plus une couche fixe posée par-dessus le décor. */
   .reveal {
-    position: fixed;
-    inset: 0;
-    z-index: 5;
+    position: relative;
+    z-index: 6;
+    min-height: 100vh;
     /* Flex, not grid: as grid items the letters would each take a row and the
        line would read downwards. */
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
     margin: 0;
+    background: var(--light);
     color: var(--light-ink);
+    border-top: 1px solid var(--rule);
+    /* Les lettres montent de 120 % sous la ligne : sans cela, la section
+       fabriquerait une barre de défilement le temps de l'animation. */
+    overflow: hidden;
     font-size: clamp(28px, 5vw, 64px);
     font-weight: 500;
     letter-spacing: -0.025em;
@@ -315,12 +320,12 @@
   /* 300vh of corridor for 200vh of timeline: the last third is a hold, so
      the finished line stays on screen instead of being covered by the next
      section the instant it lands. */
-  /* 420vh de couloir pour 300vh de timeline. Les 120vh restants ne jouent
-     rien : c'est la pause qui laisse le temps de lire la phrase avant que
-     la section suivante ne monte la recouvrir. Séparer la longueur du
-     couloir de la plage animée est ce qui permet de régler ce temps de
-     lecture sans retoucher une seule animation. */
-  #corridor { height: 420vh; }
+  /* 410vh de couloir pour 300vh de timeline. La section suivante commence
+     à entrer un écran avant la fin du couloir : il faut donc au moins
+     100vh au-delà de la plage animée, sans quoi la liste monterait pendant
+     que l'escalier grimpe encore. Les 10vh qui restent sont le souffle
+     entre la fin de l'escalier et l'arrivée des liens. */
+  #corridor { height: 410vh; }
 
   /* Above the columns, so the section that follows scrolls over the black
      they leave behind rather than under it. */
@@ -448,8 +453,6 @@
   <span></span><span></span><span></span><span></span><span></span><span></span>
 </div>
 
-<p class="reveal" id="reveal">C'est cool quand même</p>
-
 <div class="cursor" id="cursor" aria-hidden="true"></div>
 
 <div id="corridor"></div>
@@ -471,6 +474,8 @@
     </ul>
   </div>
 </section>
+
+<p class="reveal" id="reveal">C'est cool quand même</p>
 
 <!-- The prompt handed to the visitor. Kept in the DOM rather than in a JS
      string so it stays readable. -->
@@ -992,16 +997,23 @@ Respecte prefers-reduced-motion, et fais en sorte que le contenu reste lisible s
 
         // Second temps : les colonnes blanches montent et recouvrent le
         // noir, chacune plus tard que sa voisine de gauche.
-        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1)
+        .to('.wipe span', { scaleY: 1, ease: 'none', stagger: 0.09, duration: 0.6 }, 1.1);
+    });
 
-        // La ligne arrive une fois le blanc posé.
-        .from(letters, {
-          yPercent: 120,
-          opacity: 0,
-          duration: 0.5,
-          ease: 'power3.out',
-          stagger: 0.035
-        }, 1.85);
+    // La phrase ne fait plus partie de la timeline du couloir : elle a sa
+    // propre section, tout à la fin, donc son propre déclencheur. Il n'est
+    // pas dans le matchMedia, puisqu'il ne dépend plus du couloir.
+    gsap.from(letters, {
+      yPercent: 120,
+      opacity: 0,
+      duration: 0.5,
+      ease: 'power3.out',
+      stagger: 0.035,
+      scrollTrigger: {
+        trigger: '#reveal',
+        start: 'top 72%',
+        toggleActions: 'play none none reverse'
+      }
     });
   }
 
